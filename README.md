@@ -66,7 +66,7 @@ virgosoft-limit-order/
 │   └── api.php           # API endpoints
 ├── tests/                # Test suite
 └── docs/                 # Documentation
-    ├── implementation-plan.md
+    ├── feature-based-implementation-plan.md
     ├── feature-based-architecture.md
     ├── database-schema.md
     ├── api-design.md
@@ -133,7 +133,7 @@ ddev npm run dev
 ## 📚 Documentation
 
 ### Architecture & Design
-- [Implementation Plan](docs/implementation-plan.md) - Step-by-step implementation guide
+- [Feature-Based Implementation Plan](docs/feature-based-implementation-plan.md) - Feature-driven development approach
 - [Feature-Based Architecture](docs/feature-based-architecture.md) - Code organization principles
 - [Database Schema](docs/database-schema.md) - Database design and relationships
 
