@@ -1,0 +1,91 @@
+# Server
+/public/sitemap
+
+# IDE
+.classpath
+.c9/
+.project
+.settings
+.metadata
+*.iml
+*.ipr
+_ide_helper.php
+_ide_helper_models.php
+.phpstorm.meta.php
+*.sublime-workspace
+.vscode/*
+!.vscode/macos-settings.json
+!.vscode/windows-settings.json
+!.vscode/linux-settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Laravel
+*.log
+.DS_Store
+.env
+.env.backup
+.env.testing
+.env.production
+.phpactor.json
+.phpunit.result.cache
+/.fleet
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+/auth.json
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/vendor
+Homestead.json
+Homestead.yaml
+Thumbs.db
+
+# NPM staffs
+npm-debug.log
+yarn-error.log
+
+# Developer
+*.bak
+*.backup
+/scratches
+
+# DDEV
+/.ddev/providers/
+
+# Compiled source
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Packages
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs and databases
+*.sql
+!/docker/**/*.sql
+*.sqlite
+
+# OS generated files
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
