@@ -108,6 +108,23 @@ class User extends Authenticatable
     }
 
     /**
+     * Get base user data for API responses.
+     * This method provides the common fields shared across all API responses.
+     *
+     * @return array
+     */
+    private function getBaseApiData(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+        ];
+    }
+
+    /**
      * Get user data with balance explicitly included for API responses.
      * This method should be used when the authenticated user needs to see their balance.
      *
@@ -115,14 +132,9 @@ class User extends Authenticatable
      */
     public function toApiWithBalance(): array
     {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
+        return array_merge($this->getBaseApiData(), [
             'balance' => $this->balance,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-        ];
+        ]);
     }
 
     /**
@@ -132,12 +144,6 @@ class User extends Authenticatable
      */
     public function toApiWithoutBalance(): array
     {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-        ];
+        return $this->getBaseApiData();
     }
 }
