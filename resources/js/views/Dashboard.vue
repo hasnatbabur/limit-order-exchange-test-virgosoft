@@ -128,41 +128,121 @@
                                 </nav>
                             </div>
 
-                            <!-- Order Form (Placeholder) -->
+                            <!-- Order Form -->
                             <div class="space-y-4">
+                                <!-- Error Message -->
+                                <div v-if="orderForm.error" class="rounded-md bg-red-50 p-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <h3 class="text-sm font-medium text-red-800">
+                                                {{ orderForm.error }}
+                                            </h3>
+                                        </div>
+                                        <div class="ml-auto pl-3">
+                                            <div class="-mx-1.5 -my-1.5">
+                                                <button @click="orderForm.error = null" class="inline-flex bg-red-50 rounded-md p-1.5 text-red-500 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 focus:ring-red-600">
+                                                    <span class="sr-only">Dismiss</span>
+                                                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Success Message -->
+                                <div v-if="orderForm.success" class="rounded-md bg-green-50 p-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <h3 class="text-sm font-medium text-green-800">
+                                                {{ orderForm.success }}
+                                            </h3>
+                                        </div>
+                                        <div class="ml-auto pl-3">
+                                            <div class="-mx-1.5 -my-1.5">
+                                                <button @click="orderForm.success = null" class="inline-flex bg-green-50 rounded-md p-1.5 text-green-500 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-50 focus:ring-green-600">
+                                                    <span class="sr-only">Dismiss</span>
+                                                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Symbol</label>
-                                    <select class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                                        <option>BTC-USD</option>
-                                        <option>ETH-USD</option>
+                                    <select v-model="orderForm.symbol" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                        <option value="BTC-USD">BTC-USD</option>
+                                        <option value="ETH-USD">ETH-USD</option>
                                     </select>
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Price (USD)</label>
-                                    <input type="number" class="mt-1 block w-full px-3 py-2.5 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0.00">
+                                    <input
+                                        v-model.number="orderForm.price"
+                                        @input="calculateTotal"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        class="mt-1 block w-full px-3 py-2.5 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        placeholder="0.00"
+                                    >
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Amount</label>
-                                    <input type="number" class="mt-1 block w-full px-3 py-2.5 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0.00">
+                                    <input
+                                        v-model.number="orderForm.amount"
+                                        @input="calculateTotal"
+                                        type="number"
+                                        step="0.00000001"
+                                        min="0"
+                                        class="mt-1 block w-full px-3 py-2.5 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        placeholder="0.00"
+                                    >
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Total (USD)</label>
-                                    <input type="number" readonly class="mt-1 block w-full px-3 py-2.5 bg-gray-50 border-gray-300 rounded-md shadow-sm sm:text-sm" placeholder="0.00">
+                                    <input
+                                        :value="orderForm.total"
+                                        readonly
+                                        class="mt-1 block w-full px-3 py-2.5 bg-gray-50 border-gray-300 rounded-md shadow-sm sm:text-sm"
+                                        placeholder="0.00"
+                                    >
                                 </div>
 
                                 <button
                                     type="button"
+                                    @click="placeOrder"
+                                    :disabled="orderForm.loading"
                                     :class="[
                                         orderType === 'buy'
                                             ? 'bg-green-600 hover:bg-green-700'
                                             : 'bg-red-600 hover:bg-red-700',
+                                        orderForm.loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
                                         'w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2'
                                     ]"
                                 >
-                                    {{ orderType === 'buy' ? 'Place Buy Order' : 'Place Sell Order' }}
+                                    <svg v-if="orderForm.loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    {{ orderForm.loading ? 'Placing Order...' : (orderType === 'buy' ? 'Place Buy Order' : 'Place Sell Order') }}
                                 </button>
                             </div>
                         </div>
@@ -284,8 +364,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useAuth } from '../composables/useAuth.js';
+import orderService from '../services/orders.js';
 
 const { user } = useAuth();
 
@@ -296,10 +377,85 @@ const openOrders = ref(3);
 const totalTrades = ref(47);
 const orderType = ref('buy');
 
+// Order form data
+const orderForm = ref({
+    symbol: 'BTC-USD',
+    price: '',
+    amount: '',
+    total: '0.00',
+    loading: false,
+    error: null,
+    success: null
+});
+
+// Calculate total when price or amount changes
+const calculateTotal = () => {
+    const price = parseFloat(orderForm.value.price) || 0;
+    const amount = parseFloat(orderForm.value.amount) || 0;
+    orderForm.value.total = (price * amount).toFixed(2);
+
+    // Clear any previous messages when user changes input
+    orderForm.value.error = null;
+    orderForm.value.success = null;
+};
+
+// Place order function
+const placeOrder = async () => {
+    // Clear previous messages
+    orderForm.value.error = null;
+    orderForm.value.success = null;
+
+    // Validate form
+    if (!orderForm.value.price || !orderForm.value.amount) {
+        orderForm.value.error = 'Please enter both price and amount';
+        return;
+    }
+
+    if (parseFloat(orderForm.value.price) <= 0 || parseFloat(orderForm.value.amount) <= 0) {
+        orderForm.value.error = 'Price and amount must be greater than 0';
+        return;
+    }
+
+    try {
+        orderForm.value.loading = true;
+
+        // Make API call to create order
+        const order = await orderService.createOrder({
+            symbol: orderForm.value.symbol,
+            side: orderType.value,
+            price: parseFloat(orderForm.value.price),
+            amount: parseFloat(orderForm.value.amount)
+        });
+
+        // Show success message
+        orderForm.value.success = `${orderType.value === 'buy' ? 'Buy' : 'Sell'} order placed successfully! Order ID: ${order.id}`;
+
+        // Reset form
+        orderForm.value.price = '';
+        orderForm.value.amount = '';
+        orderForm.value.total = '0.00';
+
+        // Update stats (in real app, this would come from API)
+        openOrders.value += 1;
+
+    } catch (error) {
+        console.error('Order creation failed:', error);
+        orderForm.value.error = error.response?.data?.error || 'Failed to place order. Please try again.';
+    } finally {
+        orderForm.value.loading = false;
+    }
+};
+
 const formatNumber = (num) => {
     return new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     }).format(num);
 };
+
+// Load user data on mount
+onMounted(async () => {
+    // In a real app, we would load user's balance and orders here
+    // For now, we'll use mock data
+});
 </script>

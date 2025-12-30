@@ -114,6 +114,46 @@ class AssetService
     }
 
     /**
+     * Lock USD for a buy order.
+     *
+     * @param int $userId
+     * @param float $amount
+     * @return bool
+     */
+    public function lockUsdForBuyOrder(int $userId, float $amount): bool
+    {
+        if ($amount <= 0) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($userId, $amount) {
+            $user = User::where('id', $userId)->lockForUpdate()->first();
+
+            if (!$user || $user->balance < $amount) {
+                return false;
+            }
+
+            return $user->subtractBalance($amount);
+        });
+    }
+
+    /**
+     * Unlock USD from a cancelled buy order.
+     *
+     * @param int $userId
+     * @param float $amount
+     * @return bool
+     */
+    public function unlockUsdFromCancelledOrder(int $userId, float $amount): bool
+    {
+        if ($amount <= 0) {
+            return false;
+        }
+
+        return $this->depositUsd($userId, $amount);
+    }
+
+    /**
      * Deposit cryptocurrency assets to user's account.
      *
      * @param int $userId

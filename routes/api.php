@@ -45,4 +45,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
+
+    // Order routes
+    Route::get('/orders', [App\Features\Orders\Http\Controllers\OrderController::class, 'index']);
+    Route::post('/orders', [App\Features\Orders\Http\Controllers\OrderController::class, 'store']);
+    Route::get('/orderbook', [App\Features\Orders\Http\Controllers\OrderController::class, 'orderBook']);
+    Route::post('/orders/{order}/cancel', [App\Features\Orders\Http\Controllers\OrderController::class, 'cancel']);
 });
