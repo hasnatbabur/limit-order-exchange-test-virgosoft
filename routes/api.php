@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthenticatedUserController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +28,10 @@ Route::options('/auth/login', function () {
         ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
 });
 
+// Password reset routes
+Route::post('/auth/password/forgot', [PasswordResetController::class, 'sendResetLink']);
+Route::post('/auth/password/reset', [PasswordResetController::class, 'reset']);
+
 // CSRF token endpoint for SPA
 Route::get('/sanctum/csrf-cookie', function () {
     return response()->json(['message' => 'CSRF cookie set']);
@@ -35,4 +41,8 @@ Route::get('/sanctum/csrf-cookie', function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthenticatedUserController::class, 'show']);
     Route::post('/auth/logout', [AuthenticatedUserController::class, 'logout']);
+
+    // Profile routes
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
 });

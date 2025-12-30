@@ -101,6 +101,57 @@ class AuthService {
         }
     }
 
+    async forgotPassword(email) {
+        try {
+            // Get CSRF token first for stateful authentication
+            await this.getCsrfToken();
+
+            const response = await axios.post(`${API_BASE_URL}/auth/password/forgot`, { email });
+
+            if (response.data.success) {
+                return response.data;
+            }
+
+            throw new Error(response.data.message || 'Failed to send reset link');
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+
+    async resetPassword(resetData) {
+        try {
+            // Get CSRF token first for stateful authentication
+            await this.getCsrfToken();
+
+            const response = await axios.post(`${API_BASE_URL}/auth/password/reset`, resetData);
+
+            if (response.data.success) {
+                return response.data;
+            }
+
+            throw new Error(response.data.message || 'Failed to reset password');
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+
+    async updateProfile(profileData) {
+        try {
+            // Get CSRF token first for stateful authentication
+            await this.getCsrfToken();
+
+            const response = await axios.put(`${API_BASE_URL}/profile`, profileData);
+
+            if (response.data.success) {
+                return response.data;
+            }
+
+            throw new Error(response.data.message || 'Failed to update profile');
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+
     async clearAuth() {
         await this.setAuthToken(null);
     }

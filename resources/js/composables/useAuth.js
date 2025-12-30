@@ -80,6 +80,57 @@ export function useAuth() {
         }
     };
 
+    const forgotPassword = async (email) => {
+        loading.value = true;
+        error.value = null;
+
+        try {
+            const response = await authService.forgotPassword(email);
+            return response;
+        } catch (err) {
+            error.value = err.message;
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    const resetPassword = async (resetData) => {
+        loading.value = true;
+        error.value = null;
+
+        try {
+            const response = await authService.resetPassword(resetData);
+            return response;
+        } catch (err) {
+            error.value = err.message;
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    const updateProfile = async (profileData) => {
+        loading.value = true;
+        error.value = null;
+
+        try {
+            const response = await authService.updateProfile(profileData);
+
+            // Update user data in state
+            if (response.data && response.data.user) {
+                user.value = response.data.user;
+            }
+
+            return response;
+        } catch (err) {
+            error.value = err.message;
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    };
+
     const initAuth = async () => {
         if (authService.isAuthenticated()) {
             try {
@@ -115,6 +166,9 @@ export function useAuth() {
         register,
         logout,
         fetchUser,
+        forgotPassword,
+        resetPassword,
+        updateProfile,
         initAuth,
         clearError
     };

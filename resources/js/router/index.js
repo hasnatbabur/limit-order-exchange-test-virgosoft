@@ -4,6 +4,8 @@ import { useAuth } from '../composables/useAuth.js';
 // Import components
 import Login from '../components/auth/Login.vue';
 import Register from '../components/auth/Register.vue';
+import ForgotPassword from '../components/auth/ForgotPassword.vue';
+import ResetPassword from '../components/auth/ResetPassword.vue';
 import Home from '../views/Home.vue';
 import Dashboard from '../views/Dashboard.vue';
 
@@ -37,6 +39,26 @@ const routes = [
         component: Register,
         meta: {
             title: 'Register - Virgosoft Exchange',
+            requiresAuth: false,
+            hideForAuth: true // Redirect authenticated users away from this page
+        }
+    },
+    {
+        path: '/forgot-password',
+        name: 'forgot-password',
+        component: ForgotPassword,
+        meta: {
+            title: 'Forgot Password - Virgosoft Exchange',
+            requiresAuth: false,
+            hideForAuth: true // Redirect authenticated users away from this page
+        }
+    },
+    {
+        path: '/reset-password',
+        name: 'reset-password',
+        component: ResetPassword,
+        meta: {
+            title: 'Reset Password - Virgosoft Exchange',
             requiresAuth: false,
             hideForAuth: true // Redirect authenticated users away from this page
         }

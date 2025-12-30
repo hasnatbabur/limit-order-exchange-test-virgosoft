@@ -16,6 +16,11 @@
                         create a new account
                     </router-link>
                 </p>
+                <p class="mt-2 text-center text-sm text-gray-600">
+                    <router-link to="/forgot-password" class="font-medium text-blue-600 hover:text-blue-500">
+                        Forgot your password?
+                    </router-link>
+                </p>
             </div>
 
             <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
