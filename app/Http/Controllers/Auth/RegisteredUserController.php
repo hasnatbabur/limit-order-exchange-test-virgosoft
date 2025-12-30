@@ -30,18 +30,12 @@ class RegisteredUserController extends Controller
                 ]);
             });
 
-            // Return success response
+            // Return success response with balance explicitly included
             return response()->json([
                 'success' => true,
                 'message' => 'User registered successfully',
                 'data' => [
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'balance' => $user->balance,
-                        'created_at' => $user->created_at,
-                    ]
+                    'user' => $user->toApiWithBalance()
                 ]
             ], 201);
 

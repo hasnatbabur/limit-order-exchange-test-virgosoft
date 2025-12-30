@@ -24,17 +24,12 @@ class AuthenticatedUserController extends Controller
 
             $user = Auth::user();
 
-            // For now, return user data without token (we'll add proper token auth later)
+            // Return user data with balance explicitly included
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
                 'data' => [
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'balance' => $user->balance,
-                    ]
+                    'user' => $user->toApiWithBalance()
                 ]
             ]);
 
@@ -66,14 +61,7 @@ class AuthenticatedUserController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'balance' => $user->balance,
-                    'created_at' => $user->created_at,
-                    'updated_at' => $user->updated_at,
-                ]
+                'user' => $user->toApiWithBalance()
             ]
         ]);
     }
