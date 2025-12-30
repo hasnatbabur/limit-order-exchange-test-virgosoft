@@ -30,12 +30,17 @@ class RegisteredUserController extends Controller
                 ]);
             });
 
-            // Return success response with balance explicitly included
+            // Create access token for the new user with abilities
+            $token = $user->createToken('auth-token', ['*'])->plainTextToken;
+
+            // Return success response with balance explicitly included and access token
             return response()->json([
                 'success' => true,
                 'message' => 'User registered successfully',
                 'data' => [
-                    'user' => $user->toApiWithBalance()
+                    'user' => $user->toApiWithBalance(),
+                    'access_token' => $token,
+                    'token_type' => 'Bearer'
                 ]
             ], 201);
 

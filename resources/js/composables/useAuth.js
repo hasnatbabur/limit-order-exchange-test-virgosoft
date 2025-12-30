@@ -33,6 +33,7 @@ export function useAuth() {
 
         try {
             const response = await authService.register(userData);
+            user.value = response.data.user;
             return response;
         } catch (err) {
             error.value = err.message;
@@ -86,7 +87,7 @@ export function useAuth() {
             } catch (err) {
                 console.warn('Failed to initialize auth:', err.message);
                 // Clear invalid token
-                authService.clearAuth();
+                await authService.clearAuth();
             }
         }
     };

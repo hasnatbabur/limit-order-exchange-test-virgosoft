@@ -125,6 +125,8 @@ class AuthenticationTest extends TestCase
                         'created_at',
                         'updated_at',
                     ],
+                    'access_token',
+                    'token_type',
                 ],
             ]);
     }

@@ -24,12 +24,17 @@ class AuthenticatedUserController extends Controller
 
             $user = Auth::user();
 
-            // Return user data with balance explicitly included
+            // Create access token for the user with abilities
+            $token = $user->createToken('auth-token', ['*'])->plainTextToken;
+
+            // Return user data with balance explicitly included and access token
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
                 'data' => [
-                    'user' => $user->toApiWithBalance()
+                    'user' => $user->toApiWithBalance(),
+                    'access_token' => $token,
+                    'token_type' => 'Bearer'
                 ]
             ]);
 
@@ -58,6 +63,13 @@ class AuthenticatedUserController extends Controller
     {
         $user = $request->user();
 
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -75,7 +87,18 @@ class AuthenticatedUserController extends Controller
     public function logout(Request $request): JsonResponse
     {
         try {
-            // For now, just return success (we'll add proper token auth later)
+            $user = $request->user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+
+            // Revoke all tokens for the user for better security
+            $user->tokens()->delete();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Logout successful'
