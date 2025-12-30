@@ -132,7 +132,7 @@
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Symbol</label>
-                                    <select class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                    <select class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
                                         <option>BTC-USD</option>
                                         <option>ETH-USD</option>
                                     </select>
@@ -140,17 +140,17 @@
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Price (USD)</label>
-                                    <input type="number" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0.00">
+                                    <input type="number" class="mt-1 block w-full px-3 py-2.5 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0.00">
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Amount</label>
-                                    <input type="number" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0.00">
+                                    <input type="number" class="mt-1 block w-full px-3 py-2.5 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0.00">
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Total (USD)</label>
-                                    <input type="number" readonly class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-md shadow-sm sm:text-sm" placeholder="0.00">
+                                    <input type="number" readonly class="mt-1 block w-full px-3 py-2.5 bg-gray-50 border-gray-300 rounded-md shadow-sm sm:text-sm" placeholder="0.00">
                                 </div>
 
                                 <button
