@@ -24,7 +24,6 @@ api.interceptors.request.use(
             config.headers['X-XSRF-TOKEN'] = csrfToken;
         }
 
-        console.log('API Request:', config.method?.toUpperCase(), config.url, config.params);
         return config;
     },
     (error) => {
@@ -49,12 +48,9 @@ api.interceptors.request.use(
 // Add response interceptor to handle common errors
 api.interceptors.response.use(
     (response) => {
-        console.log('API Response:', response.config.method?.toUpperCase(), response.config.url, response.status);
         return response;
     },
     (error) => {
-        console.error('API Error:', error.config?.method?.toUpperCase(), error.config?.url, error.response?.status, error.response?.data);
-
         // Handle 401 unauthorized errors
         if (error.response?.status === 401) {
             localStorage.removeItem('auth_token');

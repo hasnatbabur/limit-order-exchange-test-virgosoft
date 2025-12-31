@@ -13,8 +13,6 @@ class OrderService {
             }
 
             const response = await api.get('/orders', { params });
-            console.log('Orders API Response:', response.data);
-            console.log('Orders API Status:', response.status);
 
             // Check if response has expected structure
             if (!response.data) {

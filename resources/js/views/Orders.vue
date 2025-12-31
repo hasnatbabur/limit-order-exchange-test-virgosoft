@@ -323,7 +323,6 @@ const fetchOrders = async () => {
         });
 
         const response = await orderService.getOrders(params);
-        console.log('Orders service response:', response);
         orders.value = response.orders || [];
         pagination.value = response.pagination || {
             current_page: 1,
@@ -333,14 +332,7 @@ const fetchOrders = async () => {
             from: 0,
             to: 0,
         };
-        console.log('Orders after assignment:', orders.value);
-        console.log('Pagination after assignment:', pagination.value);
     } catch (error) {
-        console.error('Error fetching orders:', error);
-        console.error('Error response:', error.response);
-        console.error('Error status:', error.response?.status);
-        console.error('Error data:', error.response?.data);
-
         if (window.notify) {
             const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch orders';
             window.notify('error', 'Error', errorMessage);

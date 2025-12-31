@@ -131,21 +131,7 @@ class OrderService
      */
     public function getPaginatedUserOrders(User $user, array $filters = [], int $perPage = 10): \Illuminate\Pagination\LengthAwarePaginator
     {
-        \Log::info('Getting paginated orders', [
-            'user_id' => $user->id,
-            'filters' => $filters,
-            'per_page' => $perPage
-        ]);
-
-        $result = $this->orderRepository->findPaginatedByUserId($user->id, $filters, $perPage);
-
-        \Log::info('Paginated orders result', [
-            'total' => $result->total(),
-            'current_page' => $result->currentPage(),
-            'last_page' => $result->lastPage()
-        ]);
-
-        return $result;
+        return $this->orderRepository->findPaginatedByUserId($user->id, $filters, $perPage);
     }
 
     /**
