@@ -432,6 +432,58 @@
                 </div>
             </div>
 
+            <!-- Recent Trades -->
+            <div class="mt-6">
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Trades</h3>
+                            <router-link to="/trades" class="text-sm text-blue-600 hover:text-blue-500">View all</router-link>
+                        </div>
+
+                        <!-- Trades Table -->
+                        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                            <table class="min-w-full divide-y divide-gray-300">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Symbol</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Price</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Amount</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Total</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Created</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-if="recentTrades.length === 0">
+                                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                                            No trades found. Place some orders to start trading!
+                                        </td>
+                                    </tr>
+                                    <tr v-for="trade in recentTrades" :key="trade.id">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ trade.symbol }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span :class="[
+                                                'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                                                trade.was_buyer ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                            ]">
+                                                {{ trade.was_buyer ? 'Buy' : 'Sell' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${{ trade.price }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ trade.amount }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${{ trade.total_value }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ formatTime(trade.created_at) }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Add Test Assets Modal -->
             <div v-if="showAddAssetModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
                 <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
@@ -533,6 +585,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useAuth } from '../composables/useAuth.js';
 import orderService from '../services/orders.js';
 import assetService from '../services/assets.js';
+import tradesService from '../services/trades.js';
 import api from '../services/api.js';
 import { subscribeToOrderBook, unsubscribeFromOrderBook, subscribeToUserUpdates, unsubscribeFromUserUpdates } from '../services/broadcasting.js';
 
@@ -545,6 +598,7 @@ const openOrders = ref(3);
 const totalTrades = ref(47);
 const orderType = ref('buy');
 const recentOrders = ref([]);
+const recentTrades = ref([]);
 const orderBook = ref({
     buy_orders: [],
     sell_orders: []
@@ -814,7 +868,22 @@ onMounted(async () => {
 
     // Set up real-time WebSocket connections
     setupRealtimeConnections();
+
+    // Load user's trades
+    loadUserTrades();
 });
+
+// Load user's trades
+const loadUserTrades = async () => {
+    if (!user.value) return;
+
+    try {
+        const trades = await tradesService.getUserTrades();
+        recentTrades.value = trades.slice(0, 5); // Show only 5 most recent trades
+    } catch (error) {
+        console.error('Failed to load trades:', error);
+    }
+};
 
 // Store unsubscribe functions for cleanup
 let unsubscribeOrderBook = null;
@@ -847,6 +916,21 @@ const setupRealtimeConnections = () => {
                     openOrders.value = orders.filter(order => order.status === 'open').length;
                     totalTrades.value = orders.filter(order => order.status === 'filled').length;
                 });
+            }
+
+            // Handle order matched event
+            if (data.trade) {
+                // Show notification for trade
+                orderForm.value.success = `Trade executed! ${data.trade.amount} ${data.trade.symbol.split('-')[0]} at $${data.trade.price}`;
+
+                // Refresh trades list
+                loadUserTrades();
+            }
+
+            // Handle order cancelled event
+            if (data.order && data.order.status === 'cancelled') {
+                // Show notification for cancellation
+                orderForm.value.success = `Order cancelled! ${data.order.side === 'buy' ? 'Buy' : 'Sell'} order for ${data.order.amount} ${data.order.symbol.split('-')[0]}`;
             }
         });
     }

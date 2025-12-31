@@ -43,6 +43,16 @@ export const subscribeToUserUpdates = (userId, callback) => {
         callback(data);
     });
 
+    channel.bind('order.cancelled', (data) => {
+        console.log('User order cancelled:', data);
+        callback(data);
+    });
+
+    channel.bind('order.matched', (data) => {
+        console.log('User order matched:', data);
+        callback(data);
+    });
+
     channel.bind('balance.updated', (data) => {
         console.log('User balance updated:', data);
         callback(data);

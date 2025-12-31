@@ -3,10 +3,14 @@
 namespace App\Features\Orders\Services;
 
 use App\Features\Balance\Services\AssetService;
+use App\Features\Balance\Events\BalanceUpdated;
 use App\Features\Orders\Enums\OrderSide;
 use App\Features\Orders\Enums\OrderStatus;
 use App\Features\Orders\Events\OrderBookUpdated;
+use App\Features\Orders\Events\OrderMatched;
+use App\Features\Orders\Events\OrderCancelled;
 use App\Features\Orders\Models\Order;
+use App\Features\Orders\Models\Trade;
 use App\Features\Orders\Repositories\OrderRepositoryInterface;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -83,6 +87,18 @@ class OrderService
             }
 
             $cancelledOrder = $this->orderRepository->updateStatus($order, OrderStatus::CANCELLED);
+
+            // Get updated user data for broadcasting
+            $user = User::find($order->user_id);
+            $userData = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'balance' => $user->balance,
+            ];
+
+            // Broadcast order cancellation
+            broadcast(new OrderCancelled($cancelledOrder, $userData));
 
             // Broadcast order book update
             $this->broadcastOrderBookUpdate($order->symbol);
@@ -164,8 +180,18 @@ class OrderService
         $newOrder->refresh();
         $matchingOrder->refresh();
 
+        // Create trade record
+        $trade = Trade::create([
+            'buy_order_id' => $newOrder->side === OrderSide::BUY ? $newOrder->id : $matchingOrder->id,
+            'sell_order_id' => $newOrder->side === OrderSide::SELL ? $newOrder->id : $matchingOrder->id,
+            'symbol' => $newOrder->symbol,
+            'price' => $tradePrice,
+            'amount' => $tradeAmount,
+            'commission' => $commission,
+        ]);
+
         // Process the trade
-        $this->processTrade($newOrder, $matchingOrder, $tradeAmount, $tradePrice, $commission);
+        $this->processTrade($newOrder, $matchingOrder, $tradeAmount, $tradePrice, $commission, $trade);
     }
 
     /**

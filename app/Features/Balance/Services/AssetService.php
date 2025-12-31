@@ -2,6 +2,7 @@
 
 namespace App\Features\Balance\Services;
 
+use App\Features\Balance\Events\BalanceUpdated;
 use App\Features\Balance\Repositories\AssetRepositoryInterface;
 use App\Features\Balance\Models\Asset;
 use App\Models\User;
@@ -81,15 +82,31 @@ class AssetService
             return false;
         }
 
-        return DB::transaction(function () use ($userId, $amount) {
+        $result = DB::transaction(function () use ($userId, $amount) {
             $user = User::where('id', $userId)->lockForUpdate()->first();
 
             if (!$user) {
                 return false;
             }
 
-            return $user->addBalance($amount);
+            $success = $user->addBalance($amount);
+
+            if ($success) {
+                // Broadcast balance update
+                broadcast(new BalanceUpdated(
+                    $userId,
+                    $user->balance,
+                    null,
+                    null,
+                    null,
+                    'USD deposit'
+                ));
+            }
+
+            return $success;
         });
+
+        return $result;
     }
 
     /**
@@ -105,15 +122,31 @@ class AssetService
             return false;
         }
 
-        return DB::transaction(function () use ($userId, $amount) {
+        $result = DB::transaction(function () use ($userId, $amount) {
             $user = User::where('id', $userId)->lockForUpdate()->first();
 
             if (!$user || $user->balance < $amount) {
                 return false;
             }
 
-            return $user->subtractBalance($amount);
+            $success = $user->subtractBalance($amount);
+
+            if ($success) {
+                // Broadcast balance update
+                broadcast(new BalanceUpdated(
+                    $userId,
+                    $user->balance,
+                    null,
+                    null,
+                    null,
+                    'USD withdrawal'
+                ));
+            }
+
+            return $success;
         });
+
+        return $result;
     }
 
     /**
@@ -457,15 +490,31 @@ class AssetService
             return false;
         }
 
-        return DB::transaction(function () use ($userId, $amount) {
+        $result = DB::transaction(function () use ($userId, $amount) {
             $user = User::where('id', $userId)->lockForUpdate()->first();
 
             if (!$user) {
                 return false;
             }
 
-            return $user->addBalance($amount);
+            $success = $user->addBalance($amount);
+
+            if ($success) {
+                // Broadcast balance update
+                broadcast(new BalanceUpdated(
+                    $userId,
+                    $user->balance,
+                    null,
+                    null,
+                    null,
+                    'USD from trade'
+                ));
+            }
+
+            return $success;
         });
+
+        return $result;
     }
 
     /**
@@ -481,14 +530,30 @@ class AssetService
             return false;
         }
 
-        return DB::transaction(function () use ($userId, $commission) {
+        $result = DB::transaction(function () use ($userId, $commission) {
             $user = User::where('id', $userId)->lockForUpdate()->first();
 
             if (!$user || $user->balance < $commission) {
                 return false;
             }
 
-            return $user->subtractBalance($commission);
+            $success = $user->subtractBalance($commission);
+
+            if ($success) {
+                // Broadcast balance update
+                broadcast(new BalanceUpdated(
+                    $userId,
+                    $user->balance,
+                    null,
+                    null,
+                    null,
+                    'Commission deduction'
+                ));
+            }
+
+            return $success;
         });
+
+        return $result;
     }
 }

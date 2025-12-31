@@ -47,16 +47,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/profile', [ProfileController::class, 'update']);
 
     // Order routes
-    Route::get('/orders', [App\Features\Orders\Http\Controllers\OrderController::class, 'index']);
-    Route::post('/orders', [App\Features\Orders\Http\Controllers\OrderController::class, 'store']);
-    Route::get('/orderbook', [App\Features\Orders\Http\Controllers\OrderController::class, 'orderBook']);
-    Route::post('/orders/{order}/cancel', [App\Features\Orders\Http\Controllers\OrderController::class, 'cancel']);
+    Route::get('/orders', [App\Features\Orders\Http\Controllers\OrderController::class, 'index'])->middleware('throttle:60,1');
+    Route::post('/orders', [App\Features\Orders\Http\Controllers\OrderController::class, 'store'])->middleware('throttle:10,1');
+    Route::get('/orderbook', [App\Features\Orders\Http\Controllers\OrderController::class, 'orderBook'])->middleware('throttle:60,1');
+    Route::post('/orders/{order}/cancel', [App\Features\Orders\Http\Controllers\OrderController::class, 'cancel'])->middleware('throttle:10,1');
+
+    // Trade routes
+    Route::get('/trades', [App\Features\Orders\Http\Controllers\TradeController::class, 'index'])->middleware('throttle:60,1');
+    Route::get('/trades/recent', [App\Features\Orders\Http\Controllers\TradeController::class, 'recent'])->middleware('throttle:60,1');
 
     // Asset routes
-    Route::get('/assets', [App\Features\Balance\Http\Controllers\AssetController::class, 'index']);
-    Route::get('/assets/balance', [App\Features\Balance\Http\Controllers\AssetController::class, 'balance']);
-    Route::get('/assets/portfolio', [App\Features\Balance\Http\Controllers\AssetController::class, 'portfolio']);
-    Route::post('/assets/test-add', [App\Features\Balance\Http\Controllers\AssetController::class, 'addTestAssets']);
+    Route::get('/assets', [App\Features\Balance\Http\Controllers\AssetController::class, 'index'])->middleware('throttle:60,1');
+    Route::get('/assets/balance', [App\Features\Balance\Http\Controllers\AssetController::class, 'balance'])->middleware('throttle:60,1');
+    Route::get('/assets/portfolio', [App\Features\Balance\Http\Controllers\AssetController::class, 'portfolio'])->middleware('throttle:60,1');
+    Route::post('/assets/test-add', [App\Features\Balance\Http\Controllers\AssetController::class, 'addTestAssets'])->middleware('throttle:10,1');
 
     // Test top-up route
     Route::post('/test/topup', function (Request $request) {
@@ -92,5 +96,5 @@ Route::middleware('auth:sanctum')->group(function () {
                 'error' => 'Server error: ' . $e->getMessage()
             ], 500);
         }
-    });
+    })->middleware('throttle:5,1');
 });
