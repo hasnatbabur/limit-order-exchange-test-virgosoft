@@ -14,11 +14,14 @@ interface OrderRepositoryInterface
     public function create(array $data): Order;
     public function update(Order $order, array $data): Order;
     public function delete(Order $order): bool;
+    /**
+     * Find all orders for a user, ordered by creation date (newest first).
+     */
     public function findByUserId(int $userId): Collection;
     public function findOpenOrders(): Collection;
-    public function findOpenOrdersBySymbol(string $symbol): Collection;
-    public function findOpenBuyOrdersBySymbol(string $symbol): Collection;
-    public function findOpenSellOrdersBySymbol(string $symbol): Collection;
+    public function findOpenOrdersBySymbol(string $symbol, int $limit = 20): Collection;
+    public function findOpenBuyOrdersBySymbol(string $symbol, int $limit = 20): Collection;
+    public function findOpenSellOrdersBySymbol(string $symbol, int $limit = 20): Collection;
     public function findFirstMatchingBuyOrder(string $symbol, float $price): ?Order;
     public function findFirstMatchingSellOrder(string $symbol, float $price): ?Order;
     public function updateStatus(Order $order, OrderStatus $status): Order;

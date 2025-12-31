@@ -20,8 +20,8 @@ class OrderService {
     /**
      * Get order book for a symbol
      */
-    async getOrderBook(symbol) {
-        const response = await api.get('/orderbook', { params: { symbol } });
+    async getOrderBook(symbol, limit = 20) {
+        const response = await api.get('/orderbook', { params: { symbol, limit } });
         return response.data;
     }
 

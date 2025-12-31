@@ -555,7 +555,7 @@ onMounted(async () => {
 
     // Load order book
     try {
-        const orderBookData = await orderService.getOrderBook('BTC-USD');
+        const orderBookData = await orderService.getOrderBook('BTC-USD', 20);
         orderBook.value = orderBookData;
     } catch (error) {
         console.error('Failed to load order book:', error);

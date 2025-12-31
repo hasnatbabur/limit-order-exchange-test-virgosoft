@@ -36,9 +36,12 @@ class OrderRepository implements OrderRepositoryInterface
         return $order->delete();
     }
 
+    /**
+     * Find all orders for a user, ordered by creation date (newest first).
+     */
     public function findByUserId(int $userId): Collection
     {
-        return Order::where('user_id', $userId)->get();
+        return Order::where('user_id', $userId)->orderBy('created_at', 'desc')->get();
     }
 
     public function findOpenOrders(): Collection
@@ -46,19 +49,28 @@ class OrderRepository implements OrderRepositoryInterface
         return Order::open()->get();
     }
 
-    public function findOpenOrdersBySymbol(string $symbol): Collection
+    /**
+     * Find all open orders for a symbol, ordered by price, limited to specified count.
+     */
+    public function findOpenOrdersBySymbol(string $symbol, int $limit = 20): Collection
     {
-        return Order::open()->forSymbol($symbol)->orderByPrice()->get();
+        return Order::open()->forSymbol($symbol)->orderByPrice()->limit($limit)->get();
     }
 
-    public function findOpenBuyOrdersBySymbol(string $symbol): Collection
+    /**
+     * Find all open buy orders for a symbol, ordered by price (highest first), limited to specified count.
+     */
+    public function findOpenBuyOrdersBySymbol(string $symbol, int $limit = 20): Collection
     {
-        return Order::open()->buy()->forSymbol($symbol)->orderBy('price', 'desc')->get();
+        return Order::open()->buy()->forSymbol($symbol)->orderBy('price', 'desc')->limit($limit)->get();
     }
 
-    public function findOpenSellOrdersBySymbol(string $symbol): Collection
+    /**
+     * Find all open sell orders for a symbol, ordered by price (lowest first), limited to specified count.
+     */
+    public function findOpenSellOrdersBySymbol(string $symbol, int $limit = 20): Collection
     {
-        return Order::open()->sell()->forSymbol($symbol)->orderBy('price', 'asc')->get();
+        return Order::open()->sell()->forSymbol($symbol)->orderBy('price', 'asc')->limit($limit)->get();
     }
 
     public function findFirstMatchingBuyOrder(string $symbol, float $price): ?Order

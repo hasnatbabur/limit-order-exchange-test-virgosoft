@@ -94,11 +94,11 @@ class OrderService
     /**
      * Get order book for a symbol.
      */
-    public function getOrderBook(string $symbol): array
+    public function getOrderBook(string $symbol, int $limit = 20): array
     {
         return [
-            'buy_orders' => $this->orderRepository->findOpenBuyOrdersBySymbol($symbol),
-            'sell_orders' => $this->orderRepository->findOpenSellOrdersBySymbol($symbol),
+            'buy_orders' => $this->orderRepository->findOpenBuyOrdersBySymbol($symbol, $limit),
+            'sell_orders' => $this->orderRepository->findOpenSellOrdersBySymbol($symbol, $limit),
         ];
     }
 

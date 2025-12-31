@@ -83,10 +83,12 @@ class OrderController extends Controller
     public function orderBook(Request $request): JsonResponse
     {
         $request->validate([
-            'symbol' => 'required|string|in:BTC-USD,ETH-USD'
+            'symbol' => 'required|string|in:BTC-USD,ETH-USD',
+            'limit' => 'sometimes|integer|min:1|max:100'
         ]);
 
-        $orderBook = $this->orderService->getOrderBook($request->symbol);
+        $limit = $request->get('limit', 20);
+        $orderBook = $this->orderService->getOrderBook($request->symbol, $limit);
 
         return response()->json([
             'symbol' => $request->symbol,
