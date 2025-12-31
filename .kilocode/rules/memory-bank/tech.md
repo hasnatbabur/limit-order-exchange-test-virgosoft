@@ -48,6 +48,7 @@
 - Laravel Pint: Code formatting and style checking
 - PHPUnit: Unit and feature testing
 - Laravel Tinker: Interactive REPL for debugging
+- Log: When looking for log please use datewise file
 
 ## Project Structure
 

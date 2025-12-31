@@ -6,6 +6,7 @@ use App\Features\Orders\Enums\OrderSide;
 use App\Features\Orders\Enums\OrderStatus;
 use App\Features\Orders\Models\Order;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 interface OrderRepositoryInterface
 {
@@ -18,6 +19,11 @@ interface OrderRepositoryInterface
      * Find all orders for a user, ordered by creation date (newest first).
      */
     public function findByUserId(int $userId): Collection;
+
+    /**
+     * Find paginated orders for a user with optional filters.
+     */
+    public function findPaginatedByUserId(int $userId, array $filters = [], int $perPage = 10): LengthAwarePaginator;
     public function findOpenOrders(): Collection;
     public function findOpenOrdersBySymbol(string $symbol, int $limit = 20): Collection;
     public function findOpenBuyOrdersBySymbol(string $symbol, int $limit = 20): Collection;

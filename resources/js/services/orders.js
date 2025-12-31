@@ -2,11 +2,11 @@ import api from './api.js';
 
 class OrderService {
     /**
-     * Get all orders for the authenticated user
+     * Get all orders for the authenticated user with pagination and filters
      */
-    async getOrders() {
-        const response = await api.get('/orders');
-        return response.data.orders;
+    async getOrders(params = {}) {
+        const response = await api.get('/orders', { params });
+        return response.data;
     }
 
     /**

@@ -24,10 +24,22 @@ class OrderController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $orders = $this->orderService->getUserOrders($request->user());
+        $request->validate([
+            'page' => 'sometimes|integer|min:1',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'symbol' => 'sometimes|string|in:BTC-USD,ETH-USD',
+            'status' => 'sometimes|string|in:open,filled,cancelled',
+            'side' => 'sometimes|string|in:buy,sell',
+            'date_range' => 'sometimes|string|in:today,week,month,all',
+        ]);
+
+        $perPage = $request->get('per_page', 10);
+        $filters = $request->only(['symbol', 'status', 'side', 'date_range']);
+
+        $paginatedOrders = $this->orderService->getPaginatedUserOrders($request->user(), $filters, $perPage);
 
         return response()->json([
-            'orders' => $orders->map(function ($order) {
+            'orders' => $paginatedOrders->map(function ($order) {
                 return [
                     'id' => $order->id,
                     'symbol' => $order->symbol,
@@ -40,7 +52,15 @@ class OrderController extends Controller
                     'created_at' => $order->created_at->toISOString(),
                     'updated_at' => $order->updated_at->toISOString(),
                 ];
-            })
+            }),
+            'pagination' => [
+                'current_page' => $paginatedOrders->currentPage(),
+                'last_page' => $paginatedOrders->lastPage(),
+                'per_page' => $paginatedOrders->perPage(),
+                'total' => $paginatedOrders->total(),
+                'from' => $paginatedOrders->firstItem(),
+                'to' => $paginatedOrders->lastItem(),
+            ]
         ]);
     }
 

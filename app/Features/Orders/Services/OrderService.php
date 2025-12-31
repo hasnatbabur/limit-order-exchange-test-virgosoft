@@ -127,6 +127,14 @@ class OrderService
     }
 
     /**
+     * Get paginated user's orders with optional filters.
+     */
+    public function getPaginatedUserOrders(User $user, array $filters = [], int $perPage = 10): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        return $this->orderRepository->findPaginatedByUserId($user->id, $filters, $perPage);
+    }
+
+    /**
      * Process order matching for a newly created order.
      */
     private function processOrderMatching(Order $order): void

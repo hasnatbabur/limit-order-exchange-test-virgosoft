@@ -33,8 +33,11 @@ class TradeController extends Controller
         // Get recent trades
         $trades = $query->recent($limit)->get();
 
+        // Store user ID for use in closure
+        $userId = $user->id;
+
         return response()->json([
-            'data' => $trades->map(function ($trade) {
+            'data' => $trades->map(function ($trade) use ($userId) {
                 return [
                     'id' => $trade->id,
                     'symbol' => $trade->symbol,
@@ -46,8 +49,8 @@ class TradeController extends Controller
                     'created_at' => $trade->created_at->toISOString(),
                     'buy_order_id' => $trade->buy_order_id,
                     'sell_order_id' => $trade->sell_order_id,
-                    'was_buyer' => $trade->buyOrder->user_id === $user->id,
-                    'was_seller' => $trade->sellOrder->user_id === $user->id,
+                    'was_buyer' => $trade->buyOrder->user_id === $userId,
+                    'was_seller' => $trade->sellOrder->user_id === $userId,
                 ];
             }),
             'meta' => [

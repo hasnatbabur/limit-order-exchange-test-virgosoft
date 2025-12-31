@@ -15,7 +15,12 @@
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <label for="symbol-filter" class="block text-sm font-medium text-gray-700">Symbol</label>
-                            <select id="symbol-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <select
+                                id="symbol-filter"
+                                v-model="filters.symbol"
+                                @change="fetchOrders"
+                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                            >
                                 <option value="">All Symbols</option>
                                 <option value="BTC-USD">BTC-USD</option>
                                 <option value="ETH-USD">ETH-USD</option>
@@ -24,7 +29,12 @@
 
                         <div>
                             <label for="status-filter" class="block text-sm font-medium text-gray-700">Status</label>
-                            <select id="status-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <select
+                                id="status-filter"
+                                v-model="filters.status"
+                                @change="fetchOrders"
+                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                            >
                                 <option value="">All Status</option>
                                 <option value="open">Open</option>
                                 <option value="filled">Filled</option>
@@ -34,7 +44,12 @@
 
                         <div>
                             <label for="type-filter" class="block text-sm font-medium text-gray-700">Type</label>
-                            <select id="type-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <select
+                                id="type-filter"
+                                v-model="filters.side"
+                                @change="fetchOrders"
+                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                            >
                                 <option value="">All Types</option>
                                 <option value="buy">Buy</option>
                                 <option value="sell">Sell</option>
@@ -43,11 +58,16 @@
 
                         <div>
                             <label for="date-filter" class="block text-sm font-medium text-gray-700">Date Range</label>
-                            <select id="date-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <select
+                                id="date-filter"
+                                v-model="filters.date_range"
+                                @change="fetchOrders"
+                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                            >
+                                <option value="">All Time</option>
                                 <option value="today">Today</option>
                                 <option value="week">This Week</option>
                                 <option value="month">This Month</option>
-                                <option value="all">All Time</option>
                             </select>
                         </div>
                     </div>
@@ -74,7 +94,27 @@
                         </div>
                     </div>
 
-                    <div class="mt-8 overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                    <!-- Loading State -->
+                    <div v-if="loading" class="mt-8 text-center">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <p class="mt-2 text-sm text-gray-600">Loading orders...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div v-else-if="orders.length === 0" class="mt-8 text-center">
+                        <div class="text-gray-400">
+                            <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            {{ hasActiveFilters ? 'Try adjusting your filters' : 'Get started by placing your first order' }}
+                        </p>
+                    </div>
+
+                    <!-- Orders Table -->
+                    <div v-else class="mt-8 overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
                         <table class="min-w-full divide-y divide-gray-300">
                             <thead class="bg-gray-50">
                                 <tr>
@@ -111,121 +151,48 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <!-- Sample order rows -->
-                                <tr>
+                                <tr v-for="order in orders" :key="order.id">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        #12345
+                                        #{{ order.id }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        BTC-USD
+                                        {{ order.symbol }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                            Buy
+                                        <span :class="getOrderTypeClass(order.side)">
+                                            {{ order.side.charAt(0).toUpperCase() + order.side.slice(1) }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        $45,000.00
+                                        ${{ formatPrice(order.price) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        0.1000
+                                        {{ formatAmount(order.amount) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        0.0000
+                                        {{ formatAmount(order.filled_amount) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        $4,500.00
+                                        ${{ formatPrice(order.price * order.amount) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                            Open
+                                        <span :class="getOrderStatusClass(order.status)">
+                                            {{ order.status.charAt(0).toUpperCase() + order.status.slice(1) }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        2 hours ago
+                                        {{ formatDate(order.created_at) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <button
+                                            v-if="order.status === 'open'"
                                             type="button"
                                             class="text-red-600 hover:text-red-900"
-                                            @click="cancelOrder(12345)"
+                                            @click="cancelOrder(order.id)"
                                         >
                                             Cancel
                                         </button>
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        #12344
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        ETH-USD
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                            Sell
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        $3,200.00
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        1.5000
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        1.5000
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        $4,800.00
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                            Filled
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        1 day ago
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <span class="text-gray-400">-</span>
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        #12343
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        BTC-USD
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                            Buy
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        $44,500.00
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        0.2000
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        0.0000
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        $8,900.00
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                            Cancelled
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        3 days ago
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <span class="text-gray-400">-</span>
+                                        <span v-else class="text-gray-400">-</span>
                                     </td>
                                 </tr>
                             </tbody>
@@ -233,12 +200,20 @@
                     </div>
 
                     <!-- Pagination -->
-                    <div class="mt-6 flex items-center justify-between">
+                    <div v-if="pagination.total > 0" class="mt-6 flex items-center justify-between">
                         <div class="flex-1 flex justify-between sm:hidden">
-                            <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            <button
+                                @click="changePage(pagination.current_page - 1)"
+                                :disabled="pagination.current_page <= 1"
+                                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
                                 Previous
                             </button>
-                            <button class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            <button
+                                @click="changePage(pagination.current_page + 1)"
+                                :disabled="pagination.current_page >= pagination.last_page"
+                                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
                                 Next
                             </button>
                         </div>
@@ -246,35 +221,50 @@
                             <div>
                                 <p class="text-sm text-gray-700">
                                     Showing
-                                    <span class="font-medium">1</span>
+                                    <span class="font-medium">{{ pagination.from || 0 }}</span>
                                     to
-                                    <span class="font-medium">10</span>
+                                    <span class="font-medium">{{ pagination.to || 0 }}</span>
                                     of
-                                    <span class="font-medium">97</span>
+                                    <span class="font-medium">{{ pagination.total }}</span>
                                     results
                                 </p>
                             </div>
                             <div>
                                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                                    <button class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <button
+                                        @click="changePage(pagination.current_page - 1)"
+                                        :disabled="pagination.current_page <= 1"
+                                        class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
                                         <span class="sr-only">Previous</span>
                                         <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
                                         </svg>
                                     </button>
-                                    <button class="bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                                        1
-                                    </button>
-                                    <button class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                                        2
-                                    </button>
-                                    <button class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                                        3
-                                    </button>
-                                    <button class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                                        4
-                                    </button>
-                                    <button class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+
+                                    <!-- Page numbers -->
+                                    <template v-for="page in getVisiblePages()" :key="page">
+                                        <button
+                                            v-if="page !== '...'"
+                                            @click="changePage(page)"
+                                            :class="page === pagination.current_page ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'"
+                                            class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                                        >
+                                            {{ page }}
+                                        </button>
+                                        <span
+                                            v-else
+                                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                                        >
+                                            ...
+                                        </span>
+                                    </template>
+
+                                    <button
+                                        @click="changePage(pagination.current_page + 1)"
+                                        :disabled="pagination.current_page >= pagination.last_page"
+                                        class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
                                         <span class="sr-only">Next</span>
                                         <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
@@ -291,16 +281,162 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import orderService from '../services/orders.js';
 
-const cancelOrder = (orderId) => {
-    if (confirm(`Are you sure you want to cancel order #${orderId}?`)) {
-        // In a real app, this would call an API to cancel the order
-        console.log(`Cancelling order #${orderId}`);
-        // Show success notification
+const orders = ref([]);
+const loading = ref(false);
+const pagination = ref({
+    current_page: 1,
+    last_page: 1,
+    per_page: 10,
+    total: 0,
+    from: 0,
+    to: 0,
+});
+
+const filters = ref({
+    symbol: '',
+    status: '',
+    side: '',
+    date_range: '',
+});
+
+const hasActiveFilters = computed(() => {
+    return Object.values(filters.value).some(value => value !== '');
+});
+
+const fetchOrders = async () => {
+    loading.value = true;
+    try {
+        const params = {
+            page: pagination.value.current_page,
+            per_page: pagination.value.per_page,
+            ...filters.value,
+        };
+
+        // Remove empty filter values
+        Object.keys(params).forEach(key => {
+            if (params[key] === '') {
+                delete params[key];
+            }
+        });
+
+        const response = await orderService.getOrders(params);
+        orders.value = response.orders;
+        pagination.value = response.pagination;
+    } catch (error) {
+        console.error('Error fetching orders:', error);
         if (window.notify) {
-            window.notify('success', 'Order Cancelled', `Order #${orderId} has been cancelled successfully.`);
+            window.notify('error', 'Error', 'Failed to fetch orders');
+        }
+    } finally {
+        loading.value = false;
+    }
+};
+
+const changePage = (page) => {
+    if (page >= 1 && page <= pagination.value.last_page) {
+        pagination.value.current_page = page;
+        fetchOrders();
+    }
+};
+
+const getVisiblePages = () => {
+    const current = pagination.value.current_page;
+    const last = pagination.value.last_page;
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+    let l;
+
+    for (let i = 1; i <= last; i++) {
+        if (i === 1 || i === last || (i >= current - delta && i <= current + delta)) {
+            range.push(i);
+        }
+    }
+
+    range.forEach((i) => {
+        if (l) {
+            if (i - l === 2) {
+                rangeWithDots.push(l + 1);
+            } else if (i - l !== 1) {
+                rangeWithDots.push('...');
+            }
+        }
+        rangeWithDots.push(i);
+        l = i;
+    });
+
+    return rangeWithDots;
+};
+
+const cancelOrder = async (orderId) => {
+    if (confirm(`Are you sure you want to cancel order #${orderId}?`)) {
+        try {
+            await orderService.cancelOrder(orderId);
+            // Refresh the orders list
+            await fetchOrders();
+
+            if (window.notify) {
+                window.notify('success', 'Order Cancelled', `Order #${orderId} has been cancelled successfully.`);
+            }
+        } catch (error) {
+            console.error('Error cancelling order:', error);
+            if (window.notify) {
+                window.notify('error', 'Error', 'Failed to cancel order');
+            }
         }
     }
 };
+
+const getOrderTypeClass = (side) => {
+    return side === 'buy'
+        ? 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800'
+        : 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800';
+};
+
+const getOrderStatusClass = (status) => {
+    switch (status) {
+        case 'open':
+            return 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800';
+        case 'filled':
+            return 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800';
+        case 'cancelled':
+            return 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800';
+        default:
+            return 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800';
+    }
+};
+
+const formatPrice = (price) => {
+    return parseFloat(price).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+};
+
+const formatAmount = (amount) => {
+    return parseFloat(amount).toFixed(8).replace(/\.?0+$/, '');
+};
+
+const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+
+    if (diffInHours < 1) {
+        const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+        return diffInMinutes <= 1 ? 'Just now' : `${diffInMinutes} minutes ago`;
+    } else if (diffInHours < 24) {
+        return diffInHours === 1 ? '1 hour ago' : `${diffInHours} hours ago`;
+    } else {
+        const diffInDays = Math.floor(diffInHours / 24);
+        return diffInDays === 1 ? '1 day ago' : `${diffInDays} days ago`;
+    }
+};
+
+onMounted(() => {
+    fetchOrders();
+});
 </script>

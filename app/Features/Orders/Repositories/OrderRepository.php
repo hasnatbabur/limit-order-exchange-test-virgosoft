@@ -6,6 +6,7 @@ use App\Features\Orders\Enums\OrderSide;
 use App\Features\Orders\Enums\OrderStatus;
 use App\Features\Orders\Models\Order;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class OrderRepository implements OrderRepositoryInterface
@@ -42,6 +43,45 @@ class OrderRepository implements OrderRepositoryInterface
     public function findByUserId(int $userId): Collection
     {
         return Order::where('user_id', $userId)->orderBy('created_at', 'desc')->get();
+    }
+
+    /**
+     * Find paginated orders for a user with optional filters.
+     */
+    public function findPaginatedByUserId(int $userId, array $filters = [], int $perPage = 10): LengthAwarePaginator
+    {
+        $query = Order::where('user_id', $userId);
+
+        // Apply filters
+        if (isset($filters['symbol']) && !empty($filters['symbol'])) {
+            $query->where('symbol', $filters['symbol']);
+        }
+
+        if (isset($filters['status']) && !empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['side']) && !empty($filters['side'])) {
+            $query->where('side', $filters['side']);
+        }
+
+        if (isset($filters['date_range']) && !empty($filters['date_range'])) {
+            $now = now();
+            switch ($filters['date_range']) {
+                case 'today':
+                    $query->whereDate('created_at', $now->toDateString());
+                    break;
+                case 'week':
+                    $query->whereBetween('created_at', [$now->startOfWeek(), $now->endOfWeek()]);
+                    break;
+                case 'month':
+                    $query->whereBetween('created_at', [$now->startOfMonth(), $now->endOfMonth()]);
+                    break;
+                // 'all' doesn't need any filtering
+            }
+        }
+
+        return $query->orderBy('created_at', 'desc')->paginate($perPage);
     }
 
     public function findOpenOrders(): Collection
