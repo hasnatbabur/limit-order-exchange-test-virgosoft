@@ -50,6 +50,12 @@ class OrderRepository implements OrderRepositoryInterface
      */
     public function findPaginatedByUserId(int $userId, array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
+        \Log::info('Repository findPaginatedByUserId', [
+            'user_id' => $userId,
+            'filters' => $filters,
+            'per_page' => $perPage
+        ]);
+
         $query = Order::where('user_id', $userId);
 
         // Apply filters
@@ -81,7 +87,16 @@ class OrderRepository implements OrderRepositoryInterface
             }
         }
 
-        return $query->orderBy('created_at', 'desc')->paginate($perPage);
+        $result = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        \Log::info('Repository query result', [
+            'total' => $result->total(),
+            'count' => $result->count(),
+            'current_page' => $result->currentPage(),
+            'last_page' => $result->lastPage()
+        ]);
+
+        return $result;
     }
 
     public function findOpenOrders(): Collection

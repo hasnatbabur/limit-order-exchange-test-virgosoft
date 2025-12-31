@@ -101,7 +101,7 @@
                     </div>
 
                     <!-- Empty State -->
-                    <div v-else-if="orders.length === 0" class="mt-8 text-center">
+                    <div v-else-if="!orders || orders.length === 0" class="mt-8 text-center">
                         <div class="text-gray-400">
                             <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -151,7 +151,7 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="order in orders" :key="order.id">
+                                <tr v-for="order in (orders || [])" :key="order.id">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         #{{ order.id }}
                                     </td>
@@ -323,12 +323,27 @@ const fetchOrders = async () => {
         });
 
         const response = await orderService.getOrders(params);
-        orders.value = response.orders;
-        pagination.value = response.pagination;
+        console.log('Orders service response:', response);
+        orders.value = response.orders || [];
+        pagination.value = response.pagination || {
+            current_page: 1,
+            last_page: 1,
+            per_page: 10,
+            total: 0,
+            from: 0,
+            to: 0,
+        };
+        console.log('Orders after assignment:', orders.value);
+        console.log('Pagination after assignment:', pagination.value);
     } catch (error) {
         console.error('Error fetching orders:', error);
+        console.error('Error response:', error.response);
+        console.error('Error status:', error.response?.status);
+        console.error('Error data:', error.response?.data);
+
         if (window.notify) {
-            window.notify('error', 'Error', 'Failed to fetch orders');
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch orders';
+            window.notify('error', 'Error', errorMessage);
         }
     } finally {
         loading.value = false;
@@ -336,15 +351,20 @@ const fetchOrders = async () => {
 };
 
 const changePage = (page) => {
-    if (page >= 1 && page <= pagination.value.last_page) {
+    if (!pagination.value) return;
+
+    const lastPage = pagination.value.last_page || 1;
+    if (page >= 1 && page <= lastPage) {
         pagination.value.current_page = page;
         fetchOrders();
     }
 };
 
 const getVisiblePages = () => {
-    const current = pagination.value.current_page;
-    const last = pagination.value.last_page;
+    if (!pagination.value) return [];
+
+    const current = pagination.value.current_page || 1;
+    const last = pagination.value.last_page || 1;
     const delta = 2;
     const range = [];
     const rangeWithDots = [];

@@ -6,7 +6,27 @@
                 <h1 class="text-2xl font-semibold text-gray-900">Trading Dashboard</h1>
                 <p class="mt-1 text-sm text-gray-600">
                     Welcome back, {{ user?.name }}! Here's your trading overview.
+                    <button
+                        @click="showDebugInfo = !showDebugInfo"
+                        class="ml-2 text-xs bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded"
+                    >
+                        Debug
+                    </button>
                 </p>
+
+                <!-- Debug Info -->
+                <div v-if="showDebugInfo" class="mt-2 p-2 bg-gray-100 rounded text-xs">
+                    <p><strong>User ID:</strong> {{ user?.id }}</p>
+                    <p><strong>Email:</strong> {{ user?.email }}</p>
+                    <p><strong>Authenticated:</strong> {{ !!user }}</p>
+                    <p><strong>Orders Count:</strong> {{ recentOrders.length }}</p>
+                    <button
+                        @click="refreshOrders"
+                        class="mt-2 text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
+                    >
+                        Refresh Orders
+                    </button>
+                </div>
             </div>
 
             <!-- Stats Grid -->
@@ -604,6 +624,9 @@ const orderBook = ref({
     sell_orders: []
 });
 
+// Debug state
+const showDebugInfo = ref(false);
+
 // Top-up state
 const topupLoading = ref(false);
 
@@ -709,8 +732,8 @@ const placeOrder = async () => {
 
         // Refresh orders list
         try {
-            const orders = await orderService.getOrders();
-            recentOrders.value = orders.slice(0, 5); // Show only 5 most recent orders
+            const response = await orderService.getOrders();
+            recentOrders.value = response.orders.slice(0, 5); // Show only 5 most recent orders
         } catch (error) {
             console.error('Failed to refresh orders:', error);
         }
@@ -836,14 +859,20 @@ onMounted(async () => {
     if (user.value) {
         // Load user's orders
         try {
-            const orders = await orderService.getOrders();
-            recentOrders.value = orders.slice(0, 5); // Show only 5 most recent orders
+            const response = await orderService.getOrders();
+            recentOrders.value = response.orders.slice(0, 5); // Show only 5 most recent orders
 
             // Update stats based on real data
-            openOrders.value = orders.filter(order => order.status === 'open').length;
-            totalTrades.value = orders.filter(order => order.status === 'filled').length;
+            openOrders.value = response.orders.filter(order => order.status === 'open').length;
+            totalTrades.value = response.orders.filter(order => order.status === 'filled').length;
         } catch (error) {
             console.error('Failed to load orders:', error);
+            // If authentication fails, show a message
+            if (error.response?.status === 401) {
+                orderForm.value.error = 'Authentication error. Please log in again.';
+            } else {
+                orderForm.value.error = 'Failed to load orders. Please refresh the page.';
+            }
         }
 
         // Load user balance and assets
@@ -894,6 +923,28 @@ const loadUserTrades = async () => {
     }
 };
 
+// Refresh orders function for debugging
+const refreshOrders = async () => {
+    if (!user.value) {
+        orderForm.value.error = 'Please log in to view orders';
+        return;
+    }
+
+    try {
+        const response = await orderService.getOrders();
+        recentOrders.value = response.orders.slice(0, 5);
+        openOrders.value = response.orders.filter(order => order.status === 'open').length;
+        totalTrades.value = response.orders.filter(order => order.status === 'filled').length;
+        orderForm.value.success = 'Orders refreshed successfully!';
+        setTimeout(() => {
+            orderForm.value.success = null;
+        }, 2000);
+    } catch (error) {
+        console.error('Failed to refresh orders:', error);
+        orderForm.value.error = 'Failed to refresh orders. Please try again.';
+    }
+};
+
 // Store unsubscribe functions for cleanup
 let unsubscribeOrderBook = null;
 let unsubscribeUser = null;
@@ -903,6 +954,7 @@ const setupRealtimeConnections = () => {
     // Subscribe to order book updates for the selected symbol
     const symbol = orderForm.value.symbol || 'BTC-USD';
     unsubscribeOrderBook = subscribeToOrderBook(symbol, (data) => {
+        console.log('Received order book update in Dashboard:', data);
         orderBook.value = {
             buy_orders: data.buyOrders,
             sell_orders: data.sellOrders
@@ -920,10 +972,10 @@ const setupRealtimeConnections = () => {
             // Update orders list if changed
             if (data.order) {
                 // Refresh orders list
-                orderService.getOrders().then(orders => {
-                    recentOrders.value = orders.slice(0, 5);
-                    openOrders.value = orders.filter(order => order.status === 'open').length;
-                    totalTrades.value = orders.filter(order => order.status === 'filled').length;
+                orderService.getOrders().then(response => {
+                    recentOrders.value = response.orders.slice(0, 5);
+                    openOrders.value = response.orders.filter(order => order.status === 'open').length;
+                    totalTrades.value = response.orders.filter(order => order.status === 'filled').length;
                 });
             }
 
@@ -936,9 +988,9 @@ const setupRealtimeConnections = () => {
                 loadUserTrades();
 
                 // Update stats
-                orderService.getOrders().then(orders => {
-                    openOrders.value = orders.filter(order => order.status === 'open').length;
-                    totalTrades.value = orders.filter(order => order.status === 'filled').length;
+                orderService.getOrders().then(response => {
+                    openOrders.value = response.orders.filter(order => order.status === 'open').length;
+                    totalTrades.value = response.orders.filter(order => order.status === 'filled').length;
                 });
 
                 // Refresh assets after trade
@@ -953,8 +1005,8 @@ const setupRealtimeConnections = () => {
                 orderForm.value.success = `Order cancelled! ${data.order.side === 'buy' ? 'Buy' : 'Sell'} order for ${data.order.amount} ${data.order.symbol.split('-')[0]}`;
 
                 // Update stats
-                orderService.getOrders().then(orders => {
-                    openOrders.value = orders.filter(order => order.status === 'open').length;
+                orderService.getOrders().then(response => {
+                    openOrders.value = response.orders.filter(order => order.status === 'open').length;
                 });
 
                 // Refresh assets after order cancellation (to update locked amounts)

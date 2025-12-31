@@ -13,6 +13,13 @@ class BalanceUpdated implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets;
 
     /**
+     * The name of the queue the job should be sent to.
+     *
+     * @var string|null
+     */
+    public $queue = 'broadcasts';
+
+    /**
      * Create a new event instance.
      */
     public function __construct(

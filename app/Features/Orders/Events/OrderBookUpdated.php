@@ -13,6 +13,13 @@ class OrderBookUpdated implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets;
 
     /**
+     * The name of the queue the job should be sent to.
+     *
+     * @var string|null
+     */
+    public $queue = 'broadcasts';
+
+    /**
      * Create a new event instance.
      */
     public function __construct(
@@ -38,5 +45,17 @@ class OrderBookUpdated implements ShouldBroadcast
     public function broadcastAs(): string
     {
         return 'orderbook.updated';
+    }
+
+    /**
+     * Get the data to broadcast.
+     */
+    public function broadcastWith(): array
+    {
+        return [
+            'symbol' => $this->symbol,
+            'buyOrders' => $this->buyOrders,
+            'sellOrders' => $this->sellOrders,
+        ];
     }
 }

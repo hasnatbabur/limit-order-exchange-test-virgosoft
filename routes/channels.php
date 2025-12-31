@@ -29,5 +29,10 @@ Broadcast::channel('orderbook.{symbol}', function ($user) {
 
 // Private user channel for individual updates
 Broadcast::channel('private-user.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id;
+    \Log::info('Private user channel authorization', [
+        'user_id' => $user ? $user->id : null,
+        'requested_id' => $id,
+        'authorized' => $user && (int) $user->id === (int) $id
+    ]);
+    return $user && (int) $user->id === (int) $id;
 });

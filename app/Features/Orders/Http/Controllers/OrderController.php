@@ -38,7 +38,14 @@ class OrderController extends Controller
 
         $paginatedOrders = $this->orderService->getPaginatedUserOrders($request->user(), $filters, $perPage);
 
-        return response()->json([
+        \Log::info('Orders request', [
+            'user_id' => $request->user()->id,
+            'filters' => $filters,
+            'per_page' => $perPage,
+            'total_orders' => $paginatedOrders->total()
+        ]);
+
+        $response = [
             'orders' => $paginatedOrders->map(function ($order) {
                 return [
                     'id' => $order->id,
@@ -61,7 +68,11 @@ class OrderController extends Controller
                 'from' => $paginatedOrders->firstItem(),
                 'to' => $paginatedOrders->lastItem(),
             ]
-        ]);
+        ];
+
+        \Log::info('Orders response', ['response_structure' => array_keys($response)]);
+
+        return response()->json($response);
     }
 
     /**
