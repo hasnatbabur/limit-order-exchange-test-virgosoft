@@ -591,11 +591,11 @@ import { subscribeToOrderBook, unsubscribeFromOrderBook, subscribeToUserUpdates,
 
 const { user } = useAuth();
 
-// Mock data - in real app, this would come from API
-const balance = ref(100.00);
-const totalAssets = ref(2);
-const openOrders = ref(3);
-const totalTrades = ref(47);
+// Initialize with 0 as requested - will be updated with real data from API
+const balance = ref(0);
+const totalAssets = ref(0);
+const openOrders = ref(0);
+const totalTrades = ref(0);
 const orderType = ref('buy');
 const recentOrders = ref([]);
 const recentTrades = ref([]);
@@ -734,7 +734,16 @@ const testTopup = async () => {
         const response = await api.post('/test/topup');
         const data = response.data;
 
-        balance.value = data.new_balance;
+        // Refresh balance from API to get the most up-to-date value
+        try {
+            const balanceResponse = await assetService.getBalance();
+            balance.value = parseFloat(balanceResponse.usd_balance);
+        } catch (balanceError) {
+            console.error('Failed to refresh balance:', balanceError);
+            // Fallback to the response data if API call fails
+            balance.value = parseFloat(data.new_balance);
+        }
+
         orderForm.success = 'Successfully added $10,000 to your balance!';
     } catch (error) {
         console.error('Error adding test funds:', error);
@@ -779,8 +788,8 @@ const addTestAssets = async () => {
 
         // Refresh assets data
         try {
-            const assetsResponse = await api.get('/assets');
-            totalAssets.value = assetsResponse.data.data.length;
+            const assets = await assetService.getAssets();
+            totalAssets.value = assets.length;
         } catch (error) {
             console.error('Failed to refresh assets:', error);
         }
@@ -814,6 +823,7 @@ const formatTime = (dateString) => {
     return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 };
 
+
 // Load user data on mount
 onMounted(async () => {
     // Wait for authentication to be initialized
@@ -838,14 +848,13 @@ onMounted(async () => {
 
         // Load user balance and assets
         try {
-            // Get user data with balance
-            const userResponse = await api.get('/auth/me');
-            const userData = userResponse.data.data.user;
-            balance.value = userData.balance;
+            // Get user's complete balance information
+            const balanceResponse = await assetService.getBalance();
+            balance.value = parseFloat(balanceResponse.usd_balance);
 
             // Get assets data
-            const assetsResponse = await api.get('/assets');
-            totalAssets.value = assetsResponse.data.data.length;
+            const assets = await assetService.getAssets();
+            totalAssets.value = assets.length;
         } catch (error) {
             console.error('Failed to load user data:', error);
 
@@ -905,7 +914,7 @@ const setupRealtimeConnections = () => {
         unsubscribeUser = subscribeToUserUpdates(user.value.id, (data) => {
             // Update balance if changed
             if (data.balance !== undefined) {
-                balance.value = data.balance;
+                balance.value = parseFloat(data.balance);
             }
 
             // Update orders list if changed
@@ -925,12 +934,33 @@ const setupRealtimeConnections = () => {
 
                 // Refresh trades list
                 loadUserTrades();
+
+                // Update stats
+                orderService.getOrders().then(orders => {
+                    openOrders.value = orders.filter(order => order.status === 'open').length;
+                    totalTrades.value = orders.filter(order => order.status === 'filled').length;
+                });
+
+                // Refresh assets after trade
+                assetService.getAssets().then(assets => {
+                    totalAssets.value = assets.length;
+                });
             }
 
             // Handle order cancelled event
             if (data.order && data.order.status === 'cancelled') {
                 // Show notification for cancellation
                 orderForm.value.success = `Order cancelled! ${data.order.side === 'buy' ? 'Buy' : 'Sell'} order for ${data.order.amount} ${data.order.symbol.split('-')[0]}`;
+
+                // Update stats
+                orderService.getOrders().then(orders => {
+                    openOrders.value = orders.filter(order => order.status === 'open').length;
+                });
+
+                // Refresh assets after order cancellation (to update locked amounts)
+                assetService.getAssets().then(assets => {
+                    totalAssets.value = assets.length;
+                });
             }
         });
     }

@@ -254,18 +254,30 @@ class AssetRepository implements AssetRepositoryInterface
         }
 
         return DB::transaction(function () use ($userId, $symbol, $amount) {
-            $asset = $this->getOrCreateAsset($userId, $symbol);
-
-            if (!$asset) {
-                return false;
-            }
-
-            // Lock the asset row for update
-            $lockedAsset = Asset::where('id', $asset->id)
+            // Lock the asset row for update first
+            $lockedAsset = Asset::where('user_id', $userId)
+                ->where('symbol', $symbol)
                 ->lockForUpdate()
                 ->first();
 
-            return $lockedAsset ? $lockedAsset->addAmount($amount) : false;
+            // If asset doesn't exist, create it
+            if (!$lockedAsset && $this->assetRegistry->isAutoCreateEnabled()) {
+                if (!$this->assetRegistry->isAssetSupported($symbol)) {
+                    throw new \InvalidArgumentException("Asset symbol '{$symbol}' is not supported or enabled");
+                }
+
+                $lockedAsset = $this->createOrUpdateAsset($userId, $symbol, 0.0, 0.0);
+                // Lock the newly created asset
+                $lockedAsset = Asset::where('id', $lockedAsset->id)
+                    ->lockForUpdate()
+                    ->first();
+            }
+
+            if (!$lockedAsset) {
+                return false;
+            }
+
+            return $lockedAsset->addAmount($amount);
         });
     }
 
@@ -284,18 +296,18 @@ class AssetRepository implements AssetRepositoryInterface
         }
 
         return DB::transaction(function () use ($userId, $symbol, $amount) {
-            $asset = $this->getOrCreateAsset($userId, $symbol);
-
-            if (!$asset) {
-                return false;
-            }
-
-            // Lock the asset row for update
-            $lockedAsset = Asset::where('id', $asset->id)
+            // Lock the asset row for update first
+            $lockedAsset = Asset::where('user_id', $userId)
+                ->where('symbol', $symbol)
                 ->lockForUpdate()
                 ->first();
 
-            return $lockedAsset ? $lockedAsset->subtractAmount($amount) : false;
+            // If asset doesn't exist, we can't subtract from it
+            if (!$lockedAsset) {
+                return false;
+            }
+
+            return $lockedAsset->subtractAmount($amount);
         });
     }
 }
