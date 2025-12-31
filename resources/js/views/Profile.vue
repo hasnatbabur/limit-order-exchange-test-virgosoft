@@ -295,13 +295,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch, computed } from 'vue';
+import { ref, reactive, onMounted, watch, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth.js';
 import assetService from '../services/assets.js';
 
 const router = useRouter();
-const { user, loading, error, logout, updateProfile } = useAuth();
+const { user, loading, error, logout, updateProfile, isAuthenticated } = useAuth();
 
 const form = reactive({
     name: '',
@@ -332,31 +332,45 @@ const balance = computed(() => {
 
 const userAssets = ref([]);
 
+// Load assets when user is available
+const loadUserAssets = async () => {
+    if (!user.value || !isAuthenticated.value) {
+        return;
+    }
+
+    try {
+        const assets = await assetService.getAssets();
+        userAssets.value = assets || [];
+    } catch (error) {
+        console.error('Failed to load assets:', error);
+        userAssets.value = [];
+    }
+};
+
 // Initialize form with user data
 onMounted(async () => {
+    // Wait a tick for auth to initialize
+    await nextTick();
+
+    // Initialize form if user is available
     if (user.value) {
         form.name = user.value.name || '';
         form.email = user.value.email || '';
-
-        // Load user's assets
-        try {
-            const assets = await assetService.getAssets();
-            console.log('Initial assets loaded:', assets);
-            userAssets.value = assets;
-            console.log('userAssets.value after initial load:', userAssets.value);
-        } catch (error) {
-            console.error('Failed to load assets:', error);
-        }
     }
+
+    // Load assets
+    loadUserAssets();
 });
 
-// Watch for user changes to update form
-watch(user, (newUser) => {
-    if (newUser) {
-        form.name = newUser.name || '';
-        form.email = newUser.email || '';
+// Watch for authentication changes
+watch([user, isAuthenticated], () => {
+    if (user.value && isAuthenticated.value) {
+        form.name = user.value.name || '';
+        form.email = user.value.email || '';
+        loadUserAssets();
     }
 }, { immediate: true });
+
 
 const formatNumber = (num) => {
     return new Intl.NumberFormat('en-US', {
@@ -427,14 +441,7 @@ const addTestAssets = async () => {
         }, 2000);
 
         // Refresh assets data
-        try {
-            const assets = await assetService.getAssets();
-            console.log('Assets refreshed:', assets);
-            userAssets.value = assets;
-            console.log('userAssets.value after refresh:', userAssets.value);
-        } catch (error) {
-            console.error('Failed to refresh assets:', error);
-        }
+        await loadUserAssets();
 
         // Also refresh user data to get updated balance
         try {

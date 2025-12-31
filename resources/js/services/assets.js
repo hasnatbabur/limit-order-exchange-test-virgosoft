@@ -9,14 +9,10 @@ export default {
      */
     async getAssets() {
         try {
-            console.log('Fetching assets...');
             const response = await api.get('/assets');
-            console.log('Assets response:', response);
-            console.log('Response data:', response.data);
             return response.data.data;
         } catch (error) {
             console.error('Failed to fetch assets:', error);
-            console.error('Error response:', error.response);
             throw error;
         }
     },
