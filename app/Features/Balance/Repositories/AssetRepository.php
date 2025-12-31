@@ -3,12 +3,19 @@
 namespace App\Features\Balance\Repositories;
 
 use App\Features\Balance\Models\Asset;
+use App\Features\Balance\Services\AssetRegistryService;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class AssetRepository implements AssetRepositoryInterface
 {
+    protected AssetRegistryService $assetRegistry;
+
+    public function __construct(AssetRegistryService $assetRegistry)
+    {
+        $this->assetRegistry = $assetRegistry;
+    }
     /**
      * Get all assets for a user.
      *
@@ -30,6 +37,32 @@ class AssetRepository implements AssetRepositoryInterface
     public function getUserAssetBySymbol(int $userId, string $symbol): ?Asset
     {
         return Asset::forUser($userId)->bySymbol($symbol)->first();
+    }
+
+    /**
+     * Get or create an asset for a user by symbol.
+     * This implements the smart lazy creation pattern for fault tolerance.
+     *
+     * @param int $userId
+     * @param string $symbol
+     * @return Asset|null
+     */
+    public function getOrCreateAsset(int $userId, string $symbol): ?Asset
+    {
+        return DB::transaction(function () use ($userId, $symbol) {
+            $asset = $this->getUserAssetBySymbol($userId, $symbol);
+
+            if (!$asset && $this->assetRegistry->isAutoCreateEnabled()) {
+                // Validate asset symbol before creation
+                if (!$this->assetRegistry->isAssetSupported($symbol)) {
+                    throw new \InvalidArgumentException("Asset symbol '{$symbol}' is not supported or enabled");
+                }
+
+                $asset = $this->createOrUpdateAsset($userId, $symbol, 0.0, 0.0);
+            }
+
+            return $asset;
+        });
     }
 
     /**
@@ -221,12 +254,10 @@ class AssetRepository implements AssetRepositoryInterface
         }
 
         return DB::transaction(function () use ($userId, $symbol, $amount) {
-            $asset = $this->getUserAssetBySymbol($userId, $symbol);
+            $asset = $this->getOrCreateAsset($userId, $symbol);
 
             if (!$asset) {
-                // Create new asset if it doesn't exist
-                $asset = $this->createOrUpdateAsset($userId, $symbol, $amount, 0.0);
-                return $asset->exists;
+                return false;
             }
 
             // Lock the asset row for update
@@ -253,7 +284,7 @@ class AssetRepository implements AssetRepositoryInterface
         }
 
         return DB::transaction(function () use ($userId, $symbol, $amount) {
-            $asset = $this->getUserAssetBySymbol($userId, $symbol);
+            $asset = $this->getOrCreateAsset($userId, $symbol);
 
             if (!$asset) {
                 return false;

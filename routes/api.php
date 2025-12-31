@@ -56,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/assets', [App\Features\Balance\Http\Controllers\AssetController::class, 'index']);
     Route::get('/assets/balance', [App\Features\Balance\Http\Controllers\AssetController::class, 'balance']);
     Route::get('/assets/portfolio', [App\Features\Balance\Http\Controllers\AssetController::class, 'portfolio']);
+    Route::post('/assets/test-add', [App\Features\Balance\Http\Controllers\AssetController::class, 'addTestAssets']);
 
     // Test top-up route
     Route::post('/test/topup', function (Request $request) {

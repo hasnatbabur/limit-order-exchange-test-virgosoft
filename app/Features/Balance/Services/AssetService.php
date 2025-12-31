@@ -11,10 +11,12 @@ use Illuminate\Support\Facades\DB;
 class AssetService
 {
     protected AssetRepositoryInterface $assetRepository;
+    protected AssetRegistryService $assetRegistry;
 
-    public function __construct(AssetRepositoryInterface $assetRepository)
+    public function __construct(AssetRepositoryInterface $assetRepository, AssetRegistryService $assetRegistry)
     {
         $this->assetRepository = $assetRepository;
+        $this->assetRegistry = $assetRegistry;
     }
 
     /**
@@ -30,6 +32,7 @@ class AssetService
 
     /**
      * Get a specific asset for a user by symbol.
+     * Uses smart lazy creation for fault tolerance.
      *
      * @param int $userId
      * @param string $symbol
@@ -37,7 +40,7 @@ class AssetService
      */
     public function getUserAssetBySymbol(int $userId, string $symbol): ?Asset
     {
-        return $this->assetRepository->getUserAssetBySymbol($userId, $symbol);
+        return $this->assetRepository->getOrCreateAsset($userId, $symbol);
     }
 
     /**
@@ -167,6 +170,15 @@ class AssetService
             return false;
         }
 
+        // Validate asset symbol and amount
+        if (!$this->assetRegistry->isAssetSupported($symbol)) {
+            throw new \InvalidArgumentException("Asset symbol '{$symbol}' is not supported");
+        }
+
+        if (!$this->assetRegistry->validateAssetAmount($symbol, $amount)) {
+            throw new \InvalidArgumentException("Amount {$amount} is below minimum for {$symbol}");
+        }
+
         return $this->assetRepository->addAssetAmount($userId, $symbol, $amount);
     }
 
@@ -184,6 +196,15 @@ class AssetService
             return false;
         }
 
+        // Validate asset symbol and amount
+        if (!$this->assetRegistry->isAssetSupported($symbol)) {
+            throw new \InvalidArgumentException("Asset symbol '{$symbol}' is not supported");
+        }
+
+        if (!$this->assetRegistry->validateAssetAmount($symbol, $amount)) {
+            throw new \InvalidArgumentException("Amount {$amount} is below minimum for {$symbol}");
+        }
+
         return $this->assetRepository->subtractAssetAmount($userId, $symbol, $amount);
     }
 
@@ -199,6 +220,11 @@ class AssetService
     {
         if ($amount <= 0) {
             return false;
+        }
+
+        // Validate asset symbol
+        if (!$this->assetRegistry->isAssetSupported($symbol)) {
+            throw new \InvalidArgumentException("Asset symbol '{$symbol}' is not supported");
         }
 
         return DB::transaction(function () use ($userId, $symbol, $amount) {
@@ -224,6 +250,11 @@ class AssetService
     {
         if ($amount <= 0) {
             return false;
+        }
+
+        // Validate asset symbol
+        if (!$this->assetRegistry->isAssetSupported($symbol)) {
+            throw new \InvalidArgumentException("Asset symbol '{$symbol}' is not supported");
         }
 
         return DB::transaction(function () use ($userId, $symbol, $amount) {
@@ -330,8 +361,8 @@ class AssetService
      */
     public function initializeUserAssets(int $userId): void
     {
-        // Create default asset entries for common cryptocurrencies
-        $defaultAssets = ['BTC', 'ETH'];
+        // Get default assets from configuration
+        $defaultAssets = $this->assetRegistry->getDefaultAssets();
 
         foreach ($defaultAssets as $symbol) {
             $this->assetRepository->createOrUpdateAsset($userId, $symbol, 0.0, 0.0);
@@ -346,8 +377,7 @@ class AssetService
      */
     public function isValidAssetSymbol(string $symbol): bool
     {
-        $validSymbols = ['BTC', 'ETH', 'USDT', 'USDC'];
-        return in_array(strtoupper($symbol), $validSymbols);
+        return $this->assetRegistry->isAssetSupported($symbol);
     }
 
     /**

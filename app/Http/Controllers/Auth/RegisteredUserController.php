@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
+use App\Features\Balance\Services\AssetService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -15,9 +16,10 @@ class RegisteredUserController extends Controller
      * Handle an incoming registration request.
      *
      * @param RegisterRequest $request
+     * @param AssetService $assetService
      * @return JsonResponse
      */
-    public function store(RegisterRequest $request): JsonResponse
+    public function store(RegisterRequest $request, AssetService $assetService): JsonResponse
     {
         try {
             // Create user within a database transaction
@@ -29,6 +31,8 @@ class RegisteredUserController extends Controller
                     'balance' => 0.00, // Initialize with zero balance for trading
                 ]);
             });
+            // Initialize default assets for new user
+            $assetService->initializeUserAssets($user->id);
 
             // Create access token for the new user with abilities
             $token = $user->createToken('auth-token', ['*'])->plainTextToken;

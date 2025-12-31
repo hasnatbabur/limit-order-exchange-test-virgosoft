@@ -57,7 +57,15 @@
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
                                     <dt class="text-sm font-medium text-gray-500 truncate">Total Assets</dt>
-                                    <dd class="text-lg font-medium text-gray-900">{{ totalAssets }}</dd>
+                                    <div class="flex items-center">
+                                        <dd class="text-lg font-medium text-gray-900">{{ totalAssets }}</dd>
+                                        <button
+                                            @click="showAddAssetModal = true"
+                                            class="ml-3 text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded"
+                                        >
+                                            + Add
+                                        </button>
+                                    </div>
                                 </dl>
                             </div>
                         </div>
@@ -267,7 +275,38 @@
                 <div class="lg:col-span-2">
                     <div class="bg-white shadow rounded-lg">
                         <div class="px-4 py-5 sm:p-6">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Order Book</h3>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900">Order Book</h3>
+                                <div class="text-sm text-gray-500">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        {{ orderForm.symbol || 'BTC-USD' }}
+                                    </span>
+                                    <span class="ml-2">Best: {{ getBestPrice() }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Order Matching Info -->
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 001-1V9a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h3 class="text-sm font-medium text-blue-800">Order Matching</h3>
+                                        <div class="mt-2 text-sm text-blue-700">
+                                            <p>Orders are matched immediately when:</p>
+                                            <ul class="list-disc list-inside mt-1 space-y-1">
+                                                <li>Buy order price ≥ existing sell order price</li>
+                                                <li>Sell order price ≤ existing buy order price</li>
+                                            </ul>
+                                            <p class="mt-2">Note: A 1.5% commission is deducted from the seller (the one receiving USD).</p>
+                                            <p class="mt-2">If you want to avoid immediate matching, try a price that's further from the market!</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
                             <!-- Order Book Table -->
                             <div class="grid grid-cols-2 gap-4">
@@ -392,14 +431,108 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Add Test Assets Modal -->
+            <div v-if="showAddAssetModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                    <div class="mt-3">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Add Test Assets</h3>
+                            <button @click="showAddAssetModal = false" class="text-gray-400 hover:text-gray-500">
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Error Message -->
+                        <div v-if="assetForm.error" class="rounded-md bg-red-50 p-4 mb-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-red-800">
+                                        {{ assetForm.error }}
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Success Message -->
+                        <div v-if="assetForm.success" class="rounded-md bg-green-50 p-4 mb-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-green-800">
+                                        {{ assetForm.success }}
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Asset Symbol</label>
+                                <select v-model="assetForm.symbol" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                    <option value="BTC">Bitcoin (BTC)</option>
+                                    <option value="ETH">Ethereum (ETH)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Amount</label>
+                                <input
+                                    v-model.number="assetForm.amount"
+                                    type="number"
+                                    step="0.00000001"
+                                    min="0.00000001"
+                                    max="10000"
+                                    class="mt-1 block w-full px-3 py-2.5 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    placeholder="0.00000000"
+                                >
+                            </div>
+
+                            <div class="flex space-x-3">
+                                <button
+                                    type="button"
+                                    @click="addTestAssets"
+                                    :disabled="assetForm.loading"
+                                    class="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-medium py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                >
+                                    <svg v-if="assetForm.loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    {{ assetForm.loading ? 'Adding...' : 'Add Assets' }}
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="showAddAssetModal = false"
+                                    class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useAuth } from '../composables/useAuth.js';
 import orderService from '../services/orders.js';
+import assetService from '../services/assets.js';
 import api from '../services/api.js';
 import { subscribeToOrderBook, unsubscribeFromOrderBook, subscribeToUserUpdates, unsubscribeFromUserUpdates } from '../services/broadcasting.js';
 
@@ -420,12 +553,24 @@ const orderBook = ref({
 // Top-up state
 const topupLoading = ref(false);
 
+// Asset modal state
+const showAddAssetModal = ref(false);
+
 // Order form data
 const orderForm = ref({
     symbol: 'BTC-USD',
     price: '',
     amount: '',
     total: '0.00',
+    loading: false,
+    error: null,
+    success: null
+});
+
+// Asset form data
+const assetForm = ref({
+    symbol: 'BTC',
+    amount: '',
     loading: false,
     error: null,
     success: null
@@ -440,6 +585,33 @@ const calculateTotal = () => {
     // Clear any previous messages when user changes input
     orderForm.value.error = null;
     orderForm.value.success = null;
+};
+
+// Refresh order book when symbol changes
+const refreshOrderBook = async () => {
+    try {
+        const symbol = orderForm.value.symbol || 'BTC-USD';
+        const orderBookData = await orderService.getOrderBook(symbol, 20);
+        orderBook.value = orderBookData;
+    } catch (error) {
+        console.error('Failed to refresh order book:', error);
+    }
+};
+
+// Get best price from order book
+const getBestPrice = () => {
+    if (!orderBook.value) return 'N/A';
+
+    const bestBuy = orderBook.value.buy_orders[0];
+    const bestSell = orderBook.value.sell_orders[0];
+
+    if (orderType.value === 'buy' && bestSell) {
+        return `$${bestSell.price}`;
+    } else if (orderType.value === 'sell' && bestBuy) {
+        return `$${bestBuy.price}`;
+    }
+
+    return 'N/A';
 };
 
 // Place order function
@@ -518,6 +690,55 @@ const testTopup = async () => {
     }
 };
 
+// Add test assets function
+const addTestAssets = async () => {
+    // Clear previous messages
+    assetForm.value.error = null;
+    assetForm.value.success = null;
+
+    // Validate form
+    if (!assetForm.value.amount || parseFloat(assetForm.value.amount) <= 0) {
+        assetForm.value.error = 'Please enter a valid amount greater than 0';
+        return;
+    }
+
+    try {
+        assetForm.value.loading = true;
+
+        // Make API call to add test assets
+        const result = await assetService.addTestAssets(
+            assetForm.value.symbol,
+            parseFloat(assetForm.value.amount)
+        );
+
+        // Show success message
+        assetForm.value.success = result.message;
+
+        // Reset form
+        assetForm.value.amount = '';
+
+        // Close modal after a short delay
+        setTimeout(() => {
+            showAddAssetModal.value = false;
+            assetForm.value.success = null;
+        }, 2000);
+
+        // Refresh assets data
+        try {
+            const assetsResponse = await api.get('/assets');
+            totalAssets.value = assetsResponse.data.data.length;
+        } catch (error) {
+            console.error('Failed to refresh assets:', error);
+        }
+
+    } catch (error) {
+        console.error('Failed to add test assets:', error);
+        assetForm.value.error = error.response?.data?.error || 'Failed to add test assets. Please try again.';
+    } finally {
+        assetForm.value.loading = false;
+    }
+};
+
 const formatNumber = (num) => {
     return new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 2,
@@ -541,38 +762,54 @@ const formatTime = (dateString) => {
 
 // Load user data on mount
 onMounted(async () => {
-    // Load user's orders
-    try {
-        const orders = await orderService.getOrders();
-        recentOrders.value = orders.slice(0, 5); // Show only 5 most recent orders
-
-        // Update stats based on real data
-        openOrders.value = orders.filter(order => order.status === 'open').length;
-        totalTrades.value = orders.filter(order => order.status === 'filled').length;
-    } catch (error) {
-        console.error('Failed to load orders:', error);
+    // Wait for authentication to be initialized
+    if (!user.value) {
+        // Wait a bit for auth to initialize
+        await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    // Load order book
+    // Only load data if user is authenticated
+    if (user.value) {
+        // Load user's orders
+        try {
+            const orders = await orderService.getOrders();
+            recentOrders.value = orders.slice(0, 5); // Show only 5 most recent orders
+
+            // Update stats based on real data
+            openOrders.value = orders.filter(order => order.status === 'open').length;
+            totalTrades.value = orders.filter(order => order.status === 'filled').length;
+        } catch (error) {
+            console.error('Failed to load orders:', error);
+        }
+
+        // Load user balance and assets
+        try {
+            // Get user data with balance
+            const userResponse = await api.get('/auth/me');
+            const userData = userResponse.data.data.user;
+            balance.value = userData.balance;
+
+            // Get assets data
+            const assetsResponse = await api.get('/assets');
+            totalAssets.value = assetsResponse.data.data.length;
+        } catch (error) {
+            console.error('Failed to load user data:', error);
+
+            // If authentication fails, redirect to login
+            if (error.response?.status === 401) {
+                window.location.href = '/login';
+            }
+        }
+    }
+
+    // Load order book (can be loaded without authentication)
     try {
-        const orderBookData = await orderService.getOrderBook('BTC-USD', 20);
+        // Extract symbol from order form (default to BTC-USD)
+        const symbol = orderForm.value.symbol || 'BTC-USD';
+        const orderBookData = await orderService.getOrderBook(symbol, 20);
         orderBook.value = orderBookData;
     } catch (error) {
         console.error('Failed to load order book:', error);
-    }
-
-    // Load user balance and assets
-    try {
-        // Get user data with balance
-        const userResponse = await api.get('/auth/me');
-        const userData = userResponse.data.data.user;
-        balance.value = userData.balance;
-
-        // Get assets data
-        const assetsResponse = await api.get('/assets');
-        totalAssets.value = assetsResponse.data.data.length;
-    } catch (error) {
-        console.error('Failed to load user data:', error);
     }
 
     // Set up real-time WebSocket connections
@@ -585,8 +822,9 @@ let unsubscribeUser = null;
 
 // Setup real-time connections
 const setupRealtimeConnections = () => {
-    // Subscribe to order book updates for BTC-USD
-    unsubscribeOrderBook = subscribeToOrderBook('BTC-USD', (data) => {
+    // Subscribe to order book updates for the selected symbol
+    const symbol = orderForm.value.symbol || 'BTC-USD';
+    unsubscribeOrderBook = subscribeToOrderBook(symbol, (data) => {
         orderBook.value = {
             buy_orders: data.buyOrders,
             sell_orders: data.sellOrders
@@ -613,6 +851,11 @@ const setupRealtimeConnections = () => {
         });
     }
 };
+
+// Watch for symbol changes to refresh order book
+watch(() => orderForm.value.symbol, () => {
+    refreshOrderBook();
+});
 
 // Cleanup on unmount
 onUnmounted(() => {

@@ -26,6 +26,16 @@ interface AssetRepositoryInterface
     public function getUserAssetBySymbol(int $userId, string $symbol): ?Asset;
 
     /**
+     * Get or create an asset for a user by symbol.
+     * Implements smart lazy creation for fault tolerance.
+     *
+     * @param int $userId
+     * @param string $symbol
+     * @return Asset|null
+     */
+    public function getOrCreateAsset(int $userId, string $symbol): ?Asset;
+
+    /**
      * Create or update an asset for a user.
      *
      * @param int $userId

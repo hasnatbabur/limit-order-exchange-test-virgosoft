@@ -177,9 +177,8 @@ class OrderService
         $symbol = $this->extractAssetSymbol($buyOrder->symbol);
 
         // For the buyer (buyOrder)
-        // Release locked USD and deduct commission
+        // Release locked USD
         $this->assetService->releaseLockedUsdForTrade($buyOrder->user_id, $tradeValue);
-        $this->assetService->deductCommission($buyOrder->user_id, $commission);
         // Add the purchased assets
         $this->assetService->addAssetsFromTrade($buyOrder->user_id, $symbol, $amount);
 
@@ -188,6 +187,8 @@ class OrderService
         $this->assetService->releaseLockedAssetsForTrade($sellOrder->user_id, $symbol, $amount);
         // Add USD from the sale (minus commission)
         $this->assetService->addUsdFromTrade($sellOrder->user_id, $tradeValue - $commission);
+        // Deduct commission from seller (the one receiving USD)
+        $this->assetService->deductCommission($sellOrder->user_id, $commission);
     }
 
     /**

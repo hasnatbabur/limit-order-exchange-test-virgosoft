@@ -4,9 +4,11 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Features\Balance\Models\Asset;
 
 class User extends Authenticatable
 {
@@ -145,5 +147,15 @@ class User extends Authenticatable
     public function toApiWithoutBalance(): array
     {
         return $this->getBaseApiData();
+    }
+
+    /**
+     * Get the assets for the user.
+     *
+     * @return HasMany
+     */
+    public function assets(): HasMany
+    {
+        return $this->hasMany(Asset::class);
     }
 }
