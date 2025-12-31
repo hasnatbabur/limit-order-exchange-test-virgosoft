@@ -5,6 +5,7 @@ namespace App\Features\Orders\Services;
 use App\Features\Balance\Services\AssetService;
 use App\Features\Orders\Enums\OrderSide;
 use App\Features\Orders\Enums\OrderStatus;
+use App\Features\Orders\Events\OrderBookUpdated;
 use App\Features\Orders\Models\Order;
 use App\Features\Orders\Repositories\OrderRepositoryInterface;
 use App\Models\User;
@@ -52,6 +53,12 @@ class OrderService
                 }
             }
 
+            // Attempt to match the order with existing counter orders
+            $this->processOrderMatching($order);
+
+            // Broadcast order book update
+            $this->broadcastOrderBookUpdate($order->symbol);
+
             return $order;
         });
     }
@@ -75,7 +82,12 @@ class OrderService
                 $this->assetService->unlockAssetsFromCancelledOrder($order->user_id, $symbol, $order->amount);
             }
 
-            return $this->orderRepository->updateStatus($order, OrderStatus::CANCELLED);
+            $cancelledOrder = $this->orderRepository->updateStatus($order, OrderStatus::CANCELLED);
+
+            // Broadcast order book update
+            $this->broadcastOrderBookUpdate($order->symbol);
+
+            return $cancelledOrder;
         });
     }
 
@@ -96,6 +108,100 @@ class OrderService
     public function getUserOrders(User $user): \Illuminate\Database\Eloquent\Collection
     {
         return $this->orderRepository->findByUserId($user->id);
+    }
+
+    /**
+     * Process order matching for a newly created order.
+     */
+    private function processOrderMatching(Order $order): void
+    {
+        // Continue matching while the order has remaining amount and is still open
+        while ($order->status === OrderStatus::OPEN && $order->remaining_amount > 0) {
+            $matchingOrder = null;
+
+            if ($order->side === OrderSide::BUY) {
+                // For buy orders, find the lowest priced sell order that meets our price
+                $matchingOrder = $this->orderRepository->findFirstMatchingSellOrder(
+                    $order->symbol,
+                    $order->price
+                );
+            } else {
+                // For sell orders, find the highest priced buy order that meets our price
+                $matchingOrder = $this->orderRepository->findFirstMatchingBuyOrder(
+                    $order->symbol,
+                    $order->price
+                );
+            }
+
+            // If no matching order found, exit the loop
+            if (!$matchingOrder) {
+                break;
+            }
+
+            // Execute the match
+            $this->executeOrderMatch($order, $matchingOrder);
+        }
+    }
+
+    /**
+     * Execute a match between two orders.
+     */
+    private function executeOrderMatch(Order $newOrder, Order $matchingOrder): void
+    {
+        // Determine the trade amount (minimum of remaining amounts)
+        $tradeAmount = min($newOrder->remaining_amount, $matchingOrder->remaining_amount);
+        $tradePrice = $matchingOrder->price; // Use the price of the existing order
+        $tradeValue = $tradeAmount * $tradePrice;
+
+        // Calculate commission (1.5% of trade value)
+        $commission = $tradeValue * 0.015;
+
+        // Update filled amounts for both orders
+        $this->orderRepository->incrementFilledAmount($newOrder, $tradeAmount);
+        $this->orderRepository->incrementFilledAmount($matchingOrder, $tradeAmount);
+
+        // Refresh orders to get updated status
+        $newOrder->refresh();
+        $matchingOrder->refresh();
+
+        // Process the trade
+        $this->processTrade($newOrder, $matchingOrder, $tradeAmount, $tradePrice, $commission);
+    }
+
+    /**
+     * Process the trade by updating balances and assets.
+     */
+    private function processTrade(Order $buyOrder, Order $sellOrder, float $amount, float $price, float $commission): void
+    {
+        $tradeValue = $amount * $price;
+        $symbol = $this->extractAssetSymbol($buyOrder->symbol);
+
+        // For the buyer (buyOrder)
+        // Release locked USD and deduct commission
+        $this->assetService->releaseLockedUsdForTrade($buyOrder->user_id, $tradeValue);
+        $this->assetService->deductCommission($buyOrder->user_id, $commission);
+        // Add the purchased assets
+        $this->assetService->addAssetsFromTrade($buyOrder->user_id, $symbol, $amount);
+
+        // For the seller (sellOrder)
+        // Release locked assets
+        $this->assetService->releaseLockedAssetsForTrade($sellOrder->user_id, $symbol, $amount);
+        // Add USD from the sale (minus commission)
+        $this->assetService->addUsdFromTrade($sellOrder->user_id, $tradeValue - $commission);
+    }
+
+    /**
+     * Broadcast order book update for a symbol.
+     */
+    private function broadcastOrderBookUpdate(string $symbol): void
+    {
+        $orderBook = $this->getOrderBook($symbol);
+
+        broadcast(new OrderBookUpdated(
+            $symbol,
+            $orderBook['buy_orders']->toArray(),
+            $orderBook['sell_orders']->toArray()
+        ));
     }
 
     /**

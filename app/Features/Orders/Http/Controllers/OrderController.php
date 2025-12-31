@@ -94,16 +94,16 @@ class OrderController extends Controller
                 return [
                     'id' => $order->id,
                     'price' => number_format($order->price, 2, '.', ''),
-                    'amount' => number_format($order->amount, 8, '.', ''),
-                    'total' => number_format($order->total_value, 2, '.', ''),
+                    'amount' => number_format($order->remaining_amount, 8, '.', ''),
+                    'total' => number_format($order->price * $order->remaining_amount, 2, '.', ''),
                 ];
             }),
             'sell_orders' => $orderBook['sell_orders']->map(function ($order) {
                 return [
                     'id' => $order->id,
                     'price' => number_format($order->price, 2, '.', ''),
-                    'amount' => number_format($order->amount, 8, '.', ''),
-                    'total' => number_format($order->total_value, 2, '.', ''),
+                    'amount' => number_format($order->remaining_amount, 8, '.', ''),
+                    'total' => number_format($order->price * $order->remaining_amount, 2, '.', ''),
                 ];
             }),
         ]);

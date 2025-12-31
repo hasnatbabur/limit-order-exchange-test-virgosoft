@@ -51,4 +51,45 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders', [App\Features\Orders\Http\Controllers\OrderController::class, 'store']);
     Route::get('/orderbook', [App\Features\Orders\Http\Controllers\OrderController::class, 'orderBook']);
     Route::post('/orders/{order}/cancel', [App\Features\Orders\Http\Controllers\OrderController::class, 'cancel']);
+
+    // Asset routes
+    Route::get('/assets', [App\Features\Balance\Http\Controllers\AssetController::class, 'index']);
+    Route::get('/assets/balance', [App\Features\Balance\Http\Controllers\AssetController::class, 'balance']);
+    Route::get('/assets/portfolio', [App\Features\Balance\Http\Controllers\AssetController::class, 'portfolio']);
+
+    // Test top-up route
+    Route::post('/test/topup', function (Request $request) {
+        try {
+            $user = auth()->user();
+
+            if (!$user) {
+                return response()->json(['error' => 'User not authenticated'], 401);
+            }
+
+            $amount = 10000.00;
+
+            // Check if balance column exists
+            if (!isset($user->balance)) {
+                return response()->json(['error' => 'Balance column not found'], 500);
+            }
+
+            $result = $user->addBalance($amount);
+
+            if (!$result) {
+                return response()->json(['error' => 'Failed to add balance'], 500);
+            }
+
+            // Refresh the user model to get updated balance
+            $user->refresh();
+
+            return response()->json([
+                'message' => "Successfully added $10,000 to your balance",
+                'new_balance' => $user->balance
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    });
 });

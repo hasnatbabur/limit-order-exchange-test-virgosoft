@@ -24,7 +24,20 @@
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
                                     <dt class="text-sm font-medium text-gray-500 truncate">USD Balance</dt>
-                                    <dd class="text-lg font-medium text-gray-900">${{ formatNumber(balance) }}</dd>
+                                    <div class="flex items-center">
+                                        <dd class="text-lg font-medium text-gray-900">${{ formatNumber(balance) }}</dd>
+                                        <button
+                                            @click="testTopup"
+                                            :disabled="topupLoading"
+                                            class="ml-3 text-xs bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-2 py-1 rounded"
+                                        >
+                                            <svg v-if="topupLoading" class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span v-else>+$10K</span>
+                                        </button>
+                                    </div>
                                 </dl>
                             </div>
                         </div>
@@ -91,6 +104,7 @@
                     </div>
                 </div>
             </div>
+
 
             <!-- Main Content Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -255,7 +269,7 @@
                         <div class="px-4 py-5 sm:p-6">
                             <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Order Book</h3>
 
-                            <!-- Order Book Table (Placeholder) -->
+                            <!-- Order Book Table -->
                             <div class="grid grid-cols-2 gap-4">
                                 <!-- Buy Orders -->
                                 <div>
@@ -270,15 +284,15 @@
                                                 </tr>
                                             </thead>
                                             <tbody class="bg-white divide-y divide-gray-200">
-                                                <tr>
-                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-green-600">45,000.00</td>
-                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">0.1000</td>
-                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">4,500.00</td>
+                                                <tr v-if="orderBook.buy_orders.length === 0">
+                                                    <td colspan="3" class="px-3 py-2 text-center text-sm text-gray-500">
+                                                        No buy orders
+                                                    </td>
                                                 </tr>
-                                                <tr>
-                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-green-600">44,950.00</td>
-                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">0.2000</td>
-                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">8,990.00</td>
+                                                <tr v-for="order in orderBook.buy_orders" :key="order.id">
+                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-green-600">{{ order.price }}</td>
+                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ order.amount }}</td>
+                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ order.total }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -298,15 +312,15 @@
                                                 </tr>
                                             </thead>
                                             <tbody class="bg-white divide-y divide-gray-200">
-                                                <tr>
-                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-red-600">45,100.00</td>
-                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">0.1500</td>
-                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">6,765.00</td>
+                                                <tr v-if="orderBook.sell_orders.length === 0">
+                                                    <td colspan="3" class="px-3 py-2 text-center text-sm text-gray-500">
+                                                        No sell orders
+                                                    </td>
                                                 </tr>
-                                                <tr>
-                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-red-600">45,150.00</td>
-                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">0.3000</td>
-                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">13,545.00</td>
+                                                <tr v-for="order in orderBook.sell_orders" :key="order.id">
+                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-red-600">{{ order.price }}</td>
+                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ order.amount }}</td>
+                                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ order.total }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -341,17 +355,36 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">BTC-USD</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Buy</span>
+                                    <tr v-if="recentOrders.length === 0">
+                                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                                            No orders found. Place your first order above!
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">45,000.00</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">0.1000</td>
+                                    </tr>
+                                    <tr v-for="order in recentOrders" :key="order.id">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ order.symbol }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Open</span>
+                                            <span :class="[
+                                                'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                                                order.side === 'buy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                            ]">
+                                                {{ order.side === 'buy' ? 'Buy' : 'Sell' }}
+                                            </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2 hours ago</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ order.price }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ order.amount }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span :class="[
+                                                'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                                                order.status === 'open' ? 'bg-yellow-100 text-yellow-800' :
+                                                order.status === 'filled' ? 'bg-green-100 text-green-800' :
+                                                'bg-gray-100 text-gray-800'
+                                            ]">
+                                                {{ order.status.charAt(0).toUpperCase() + order.status.slice(1) }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ formatTime(order.created_at) }}
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -364,18 +397,28 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useAuth } from '../composables/useAuth.js';
 import orderService from '../services/orders.js';
+import api from '../services/api.js';
+import { subscribeToOrderBook, unsubscribeFromOrderBook, subscribeToUserUpdates, unsubscribeFromUserUpdates } from '../services/broadcasting.js';
 
 const { user } = useAuth();
 
 // Mock data - in real app, this would come from API
-const balance = ref(10000.00);
+const balance = ref(100.00);
 const totalAssets = ref(2);
 const openOrders = ref(3);
 const totalTrades = ref(47);
 const orderType = ref('buy');
+const recentOrders = ref([]);
+const orderBook = ref({
+    buy_orders: [],
+    sell_orders: []
+});
+
+// Top-up state
+const topupLoading = ref(false);
 
 // Order form data
 const orderForm = ref({
@@ -438,11 +481,40 @@ const placeOrder = async () => {
         // Update stats (in real app, this would come from API)
         openOrders.value += 1;
 
+        // Refresh orders list
+        try {
+            const orders = await orderService.getOrders();
+            recentOrders.value = orders.slice(0, 5); // Show only 5 most recent orders
+        } catch (error) {
+            console.error('Failed to refresh orders:', error);
+        }
+
+        // Order book will be updated in real-time via WebSocket
+        // No need to manually refresh here
+
     } catch (error) {
         console.error('Order creation failed:', error);
         orderForm.value.error = error.response?.data?.error || 'Failed to place order. Please try again.';
     } finally {
         orderForm.value.loading = false;
+    }
+};
+
+// Test top-up function
+const testTopup = async () => {
+    try {
+        topupLoading.value = true;
+
+        const response = await api.post('/test/topup');
+        const data = response.data;
+
+        balance.value = data.new_balance;
+        orderForm.success = 'Successfully added $10,000 to your balance!';
+    } catch (error) {
+        console.error('Error adding test funds:', error);
+        orderForm.error = error.response?.data?.error || 'Failed to add test funds. Please try again.';
+    } finally {
+        topupLoading.value = false;
     }
 };
 
@@ -453,9 +525,102 @@ const formatNumber = (num) => {
     }).format(num);
 };
 
+const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+};
+
 // Load user data on mount
 onMounted(async () => {
-    // In a real app, we would load user's balance and orders here
-    // For now, we'll use mock data
+    // Load user's orders
+    try {
+        const orders = await orderService.getOrders();
+        recentOrders.value = orders.slice(0, 5); // Show only 5 most recent orders
+
+        // Update stats based on real data
+        openOrders.value = orders.filter(order => order.status === 'open').length;
+        totalTrades.value = orders.filter(order => order.status === 'filled').length;
+    } catch (error) {
+        console.error('Failed to load orders:', error);
+    }
+
+    // Load order book
+    try {
+        const orderBookData = await orderService.getOrderBook('BTC-USD');
+        orderBook.value = orderBookData;
+    } catch (error) {
+        console.error('Failed to load order book:', error);
+    }
+
+    // Load user balance and assets
+    try {
+        // Get user data with balance
+        const userResponse = await api.get('/auth/me');
+        const userData = userResponse.data.data.user;
+        balance.value = userData.balance;
+
+        // Get assets data
+        const assetsResponse = await api.get('/assets');
+        totalAssets.value = assetsResponse.data.data.length;
+    } catch (error) {
+        console.error('Failed to load user data:', error);
+    }
+
+    // Set up real-time WebSocket connections
+    setupRealtimeConnections();
+});
+
+// Store unsubscribe functions for cleanup
+let unsubscribeOrderBook = null;
+let unsubscribeUser = null;
+
+// Setup real-time connections
+const setupRealtimeConnections = () => {
+    // Subscribe to order book updates for BTC-USD
+    unsubscribeOrderBook = subscribeToOrderBook('BTC-USD', (data) => {
+        orderBook.value = {
+            buy_orders: data.buyOrders,
+            sell_orders: data.sellOrders
+        };
+    });
+
+    // Subscribe to user-specific updates if authenticated
+    if (user.value) {
+        unsubscribeUser = subscribeToUserUpdates(user.value.id, (data) => {
+            // Update balance if changed
+            if (data.balance !== undefined) {
+                balance.value = data.balance;
+            }
+
+            // Update orders list if changed
+            if (data.order) {
+                // Refresh orders list
+                orderService.getOrders().then(orders => {
+                    recentOrders.value = orders.slice(0, 5);
+                    openOrders.value = orders.filter(order => order.status === 'open').length;
+                    totalTrades.value = orders.filter(order => order.status === 'filled').length;
+                });
+            }
+        });
+    }
+};
+
+// Cleanup on unmount
+onUnmounted(() => {
+    if (unsubscribeOrderBook) {
+        unsubscribeOrderBook();
+    }
+    if (unsubscribeUser) {
+        unsubscribeUser();
+    }
 });
 </script>

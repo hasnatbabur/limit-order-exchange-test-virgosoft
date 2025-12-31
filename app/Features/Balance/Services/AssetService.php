@@ -349,4 +349,116 @@ class AssetService
         $validSymbols = ['BTC', 'ETH', 'USDT', 'USDC'];
         return in_array(strtoupper($symbol), $validSymbols);
     }
+
+    /**
+     * Release locked USD for a completed trade.
+     *
+     * @param int $userId
+     * @param float $amount
+     * @return bool
+     */
+    public function releaseLockedUsdForTrade(int $userId, float $amount): bool
+    {
+        if ($amount <= 0) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($userId, $amount) {
+            // This method is called when a buy order is partially or fully filled
+            // The USD was already locked/subtracted when the order was placed
+            // So we don't need to do anything here since the funds are already locked
+            // The actual USD transfer happens in addUsdFromTrade for the seller
+            return true;
+        });
+    }
+
+    /**
+     * Release locked assets for a completed trade.
+     *
+     * @param int $userId
+     * @param string $symbol
+     * @param float $amount
+     * @return bool
+     */
+    public function releaseLockedAssetsForTrade(int $userId, string $symbol, float $amount): bool
+    {
+        if ($amount <= 0) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($userId, $symbol, $amount) {
+            $asset = $this->getUserAssetBySymbol($userId, $symbol);
+
+            if (!$asset || $asset->locked_amount < $amount) {
+                return false;
+            }
+
+            return $this->assetRepository->convertLockedToAvailable($asset, $amount);
+        });
+    }
+
+    /**
+     * Add assets from a completed trade.
+     *
+     * @param int $userId
+     * @param string $symbol
+     * @param float $amount
+     * @return bool
+     */
+    public function addAssetsFromTrade(int $userId, string $symbol, float $amount): bool
+    {
+        if ($amount <= 0) {
+            return false;
+        }
+
+        return $this->assetRepository->addAssetAmount($userId, $symbol, $amount);
+    }
+
+    /**
+     * Add USD from a completed trade.
+     *
+     * @param int $userId
+     * @param float $amount
+     * @return bool
+     */
+    public function addUsdFromTrade(int $userId, float $amount): bool
+    {
+        if ($amount <= 0) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($userId, $amount) {
+            $user = User::where('id', $userId)->lockForUpdate()->first();
+
+            if (!$user) {
+                return false;
+            }
+
+            return $user->addBalance($amount);
+        });
+    }
+
+    /**
+     * Deduct commission from user's USD balance.
+     *
+     * @param int $userId
+     * @param float $commission
+     * @return bool
+     */
+    public function deductCommission(int $userId, float $commission): bool
+    {
+        if ($commission <= 0) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($userId, $commission) {
+            $user = User::where('id', $userId)->lockForUpdate()->first();
+
+            if (!$user || $user->balance < $commission) {
+                return false;
+            }
+
+            return $user->subtractBalance($commission);
+        });
+    }
 }
