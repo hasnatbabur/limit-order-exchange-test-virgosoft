@@ -10,6 +10,27 @@ const api = axios.create({
     },
 });
 
+// Add request interceptor to include auth token and CSRF
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+
+        // Add CSRF token if available
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (csrfToken) {
+            config.headers['X-XSRF-TOKEN'] = csrfToken;
+        }
+
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
 // Add request interceptor to include auth token
 api.interceptors.request.use(
     (config) => {

@@ -130,6 +130,73 @@ ddev npm run dev
 - API: `https://virgosoft-limit-order.ddev.site/api`
 - phpMyAdmin: Available via DDEV
 
+## 🧪 Testing the Application
+
+### Creating a Test Account
+
+1. Navigate to `https://virgosoft-limit-order.ddev.site/register`
+2. Fill in the registration form with your details
+3. Click "Register" to create your account
+
+### Adding Test Funds
+
+1. After logging in, you'll see your USD balance in the dashboard
+2. Click the "+$10K" button next to your balance to add test funds
+3. This will add $10,000 to your account for testing
+
+### Adding Test Assets
+
+1. In the dashboard, click the "+ Add" button next to "Total Assets"
+2. Select the asset (BTC or ETH) and enter an amount
+3. Click "Add Assets" to add them to your portfolio
+
+### Placing Orders
+
+1. In the dashboard, use the "Place Order" form:
+   - Select Buy or Sell
+   - Choose a symbol (BTC-USD or ETH-USD)
+   - Enter a price and amount
+   - Click "Place Buy Order" or "Place Sell Order"
+
+2. Your order will appear in the "Recent Orders" section
+3. If your order matches with an existing counter-order, it will execute immediately
+
+### Viewing Order History
+
+1. Click the "View all" link in the "Recent Orders" section
+2. This will take you to the Orders page where you can:
+   - Filter by symbol, status, type, or date range
+   - View pagination for large order lists
+   - Cancel open orders
+
+### Testing Order Matching
+
+1. Place a buy order at a specific price
+2. Place a sell order at the same or lower price
+3. The orders should match immediately and execute
+4. Check the "Recent Trades" section for the executed trade
+
+### Real-time Updates
+
+1. Open the application in multiple browser tabs
+2. Place an order in one tab
+3. The order book and recent orders should update in real-time in all tabs
+4. When orders match, you'll see trade notifications
+
+### Testing Commission
+
+1. When a trade executes, check that:
+   - The buyer receives the full amount of cryptocurrency
+   - The seller receives the USD amount minus 1.5% commission
+   - The commission is properly calculated and deducted
+
+### Testing Edge Cases
+
+1. **Insufficient Balance**: Try to place an order with insufficient funds
+2. **Order Cancellation**: Place an order and then cancel it
+3. **Partial Fills**: Place large orders that might partially match
+4. **Concurrent Orders**: Place multiple orders quickly to test race conditions
+
 ## 📚 Documentation
 
 ### Architecture & Design

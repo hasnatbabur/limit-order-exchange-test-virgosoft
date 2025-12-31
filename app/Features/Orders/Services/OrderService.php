@@ -198,8 +198,58 @@ class OrderService
             'commission' => $commission,
         ]);
 
+        // Determine which order is buy and which is sell
+        $buyOrder = $newOrder->side === OrderSide::BUY ? $newOrder : $matchingOrder;
+        $sellOrder = $newOrder->side === OrderSide::SELL ? $newOrder : $matchingOrder;
+
         // Process the trade
-        $this->processTrade($newOrder, $matchingOrder, $tradeAmount, $tradePrice, $commission, $trade);
+        $this->processTrade($buyOrder, $sellOrder, $tradeAmount, $tradePrice, $commission, $trade);
+
+        // Get user data for broadcasting
+        $buyer = User::find($buyOrder->user_id);
+        $seller = User::find($sellOrder->user_id);
+
+        // Broadcast order matched event
+        \Log::info('Broadcasting OrderMatched event', [
+            'trade_id' => $trade->id,
+            'symbol' => $trade->symbol,
+            'buyer_id' => $buyOrder->user_id,
+            'seller_id' => $sellOrder->user_id
+        ]);
+
+        broadcast(new OrderMatched(
+            $trade,
+            [
+                'id' => $buyOrder->id,
+                'symbol' => $buyOrder->symbol,
+                'side' => $buyOrder->side->value,
+                'price' => number_format($buyOrder->price, 8, '.', ''),
+                'amount' => number_format($buyOrder->amount, 8, '.', ''),
+                'filled_amount' => number_format($buyOrder->filled_amount, 8, '.', ''),
+                'status' => $buyOrder->status->value,
+            ],
+            [
+                'id' => $sellOrder->id,
+                'symbol' => $sellOrder->symbol,
+                'side' => $sellOrder->side->value,
+                'price' => number_format($sellOrder->price, 8, '.', ''),
+                'amount' => number_format($sellOrder->amount, 8, '.', ''),
+                'filled_amount' => number_format($sellOrder->filled_amount, 8, '.', ''),
+                'status' => $sellOrder->status->value,
+            ],
+            [
+                'id' => $buyer->id,
+                'name' => $buyer->name,
+                'email' => $buyer->email,
+                'balance' => $buyer->balance,
+            ],
+            [
+                'id' => $seller->id,
+                'name' => $seller->name,
+                'email' => $seller->email,
+                'balance' => $seller->balance,
+            ]
+        ));
     }
 
     /**
@@ -231,6 +281,12 @@ class OrderService
     private function broadcastOrderBookUpdate(string $symbol): void
     {
         $orderBook = $this->getOrderBook($symbol);
+
+        \Log::info('Broadcasting OrderBookUpdated', [
+            'symbol' => $symbol,
+            'buy_orders_count' => $orderBook['buy_orders']->count(),
+            'sell_orders_count' => $orderBook['sell_orders']->count()
+        ]);
 
         broadcast(new OrderBookUpdated(
             $symbol,
